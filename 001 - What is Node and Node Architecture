@@ -1,0 +1,18 @@
+********************************************
+**** What is Node and Node Architecture ****
+********************************************
+
+Open source cross platform runtime environment for executing JS outside of a browser.
+
+Node is easy to start and great for prototyping.
+Also good for highly scalable services.
+Cleaner and more consistent codebase
+Large ecosystem of open source libs.
+
+Node is a C++ program with googles V8 engine embedded into it along with other modifications to provide a runtime environment for JS code outside of the browser.
+Also has certain objects to provide an environment different from browsers.
+there is no document objects
+you CAN work with the file system and listen for requests on a given port, etc.
+
+You can't compare node to Ruby, C#, etc. because they are completely different things, its not a programming language.
+Similarly you can't compare node with ASP.NET, Rails, Django, etc because those are frameworks. Node is not a framework, its a runtime environment.
