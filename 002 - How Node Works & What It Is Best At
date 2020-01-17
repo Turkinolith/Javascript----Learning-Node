@@ -1,0 +1,24 @@
+***********************************************
+**** How Node Works And What It Is Best At ****
+***********************************************
+
+Node is non-blocking, Asynchronous
+A single thread can handle multiple requests.
+
+Frameworks like ASP.NET or Rails are synchronous out of the box, they have to be configured to be asynchronous.
+
+IE:
+When a request is received by the server, a thread is allocated to handle the request. As more requests come in, more threads are allocated untill there are no more threads at which point requests would have to wait for threads to come open.
+This is the inefficiency of synchronous architecture.
+
+In node there is a single thread to handle requests.
+asynchronous results are put into an Event Queue. This queue is monitored in the background. When an event is in the queue the thread will then process it.
+
+Node is ideal for I/O-intensive apps.
+
+Do NOT use Node for CPU-intensive apps like video encoding or image manipulation.
+In these apps there are a lot of calculations that need to be handled by the CPU and few that touch the file system or the network.
+Because Node apps are single threaded when there is CPU intensive work going on that makes other requests have to wait. Its the reverse issue!
+
+NODE WORKS BEST FOR DATA, REAL TIME, & I/O INTENSIVE APPS, NOT CPU HEAVY WORK.
+
