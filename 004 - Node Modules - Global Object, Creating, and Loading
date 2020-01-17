@@ -1,0 +1,107 @@
+****************************
+**** Node Module System ****
+****************************
+
+****** GLOBAL OBJECT ******
+Console is a global object, its part of the global scope so it is accessible anywhere from any file.
+
+other things globally available:
+setTimeout() - used to call something after a delay.
+clearTimeout() -
+setInterval() - used to repeatedly call something after a delay
+clearInterval() - used to stop an interval.
+
+These are global objects in JS.
+
+In browsers there is a window object that represents the global scope. All things that are global can be accessed via that window object.
+IE: window.console.log() or just simply console.log, the JS engine will prefix that statement with window. because that is where that object is defined.
+By the same token when a variable is declared they are also available via the window object.
+
+Node doesn't have a window object, instead it has: global
+global.console.log, global.setTimeout(), etc.
+
+**NOTE: One thing to know about node is variables declared are NOT added to the global object.
+IE:
+const message = '';
+console.log(global.message); //returns undefined
+
+Their only scoped to the file they are declared within. 
+
+
+In client side JS within browsers, declared variables or function are set to the global scope by default.
+This is a problem in a real app, as the code is often split into multiple files and those functions or variables may be defined with the exact same name.
+Modularity is needed to avoid clashing and overwriting.
+To use the variables or functions outside of a module they need to be explicitly exported.
+
+Every node application has at least 1 file or one module that is called the main module.
+
+
+clear out app.js, add a single line:
+	console.log(module);
+	
+Run the app and I get this in return:
+Module {
+  id: '.',
+  path: 'D:\\Node_tutorial\\first-app',
+  exports: {},
+  parent: null,
+  filename: 'D:\\Node_tutorial\\first-app\\app.js',
+  loaded: false,
+  children: [],
+  paths: [
+    'D:\\Node_tutorial\\first-app\\node_modules',
+    'D:\\Node_tutorial\\node_modules',
+    'D:\\node_modules'
+  ]
+}
+
+The module object is *NOT* global.
+In node, every file is a module and and all variables and functions defined are scoped to that module.
+
+A property of the module object is "exports". This property has any exported functions or values.
+
+
+const url = "http://mylogger.io/log";
+function log(message) {
+  //send an http request
+  console.log(message);
+}
+module.exports.log = log; //This would add the log function into the exports object of the module object.
+module.exports.endPoint = url; // This would add the url constant to the exports object of the module object, with the exported url renamed to endPoint.
+
+
+Module {
+  id: '.',
+  path: 'D:\\Node_tutorial\\first-app',
+  exports: { log: [Function: log], endPoint: 'http://mylogger.io/log' },
+  parent: null,
+  filename: 'D:\\Node_tutorial\\first-app\\logger.js',
+  loaded: false,
+  children: [],
+  paths: [
+    'D:\\Node_tutorial\\first-app\\node_modules',
+    'D:\\Node_tutorial\\node_modules',
+    'D:\\node_modules'
+  ]
+}
+
+To load a module in Node you use the "require()" function.
+**NOTE: "require()" is the ES5 method, you can use the ES6 version "import" instead but it is *NOT* yet supported out of the box in node.
+
+const logger = require("./logger");
+console.log(logger);
+// returns: { log: [Function: log] }
+
+To export a single function instead of the whole file you can export just the function instead of adding it as a parameter of the empty exports object.
+
+	function log(message) {
+	  // send an http request
+	  console.log(message);
+	}
+
+	module.exports = log;
+
+Then in our other file:
+
+	const log = require("./logger");
+	log("message");
