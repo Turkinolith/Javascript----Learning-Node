@@ -1,0 +1,30 @@
+**************************
+**** Course Structure ****
+**************************
+
+Node Module System 
+	How to create modules, how to use core modules
+
+NPM (Node Package Manager)
+
+How to build RESTful API's with Express
+	*Data stored in this section will be held in a simple JS array before later on using MongoDB.
+
+Asynchronous JavaScript
+	Various patterns for working with async code: Callbacks, Promises, Async and Await *Already did most of this in React
+	
+Data Storage with MongoDB & use Mongoose
+
+Authentication and Authorization
+	Role Management w. JSON web Tokens *Also already touched on this in React.
+
+
+Handling and Logging Errors
+
+Unit and Integration Testing
+
+Test-driven Development (TDD)
+	How to build software by writing tests first.
+
+Deployment w. Heroku
+	*already covered in React too.
