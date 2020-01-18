@@ -1,0 +1,28 @@
+*********************************
+**** Module Wrapper Function ****
+*********************************
+Under the hood, node does not execute the code in a module directly. It wraps it all within a function, something like this:
+	(function (exports, require, module, __filename, __dirname) {
+	//module code
+	})
+
+The actual code is slightly more complicated than this. A more advanced JS developer would know this is an immediately invoked function expression.
+The take-away here is that node does not execute the code directly. it always wraps the code in a function.
+
+Note the arguments of the function, like require. It appears to be global but its local to each module. 
+We call this function the "Module Wrapper Function"
+
+So we've seen require and module, we also have exports which is a shortcut to module.exports
+
+So if we want to write to exports we can do:
+	
+	module.exports.log = log;
+	exports.log = log;
+	
+but I can not do:
+	exports = log;
+because this is a reference to module.exports, we can not change that reference.
+
+We also have __filename and __dirname which represent the name of this file and the path.
+__filename returns the full path to the file, including its name.
+__dirname returns the full path to the files containing directory.
