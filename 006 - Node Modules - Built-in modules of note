@@ -1,0 +1,10 @@
+https://nodejs.org/dist/latest-v12.x/docs/api/ <- This has a bunch of built-in modules (not all are modules) in the v12x of Node.
+
+A few of Note:
+File System - To work with files
+HTTP - Can create web servers that listen for HTTP requests.
+OS - Work with OS.
+Path - utilities for working with paths.
+Process - info about current process.
+Query Strings - Useful in building HTTP services.
+Stream - work with streams of data.
