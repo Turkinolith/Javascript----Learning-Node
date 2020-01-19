@@ -1,0 +1,34 @@
+
+*********************
+**** Path Module ****
+*********************
+https://nodejs.org/dist/latest-v12.x/docs/api/path.html
+
+
+Path module provides utilities for working with file and directory paths. it can be accessed using:
+const path = require('path');
+
+The argument to require, node assumes it is a built-in module, if there is no built-in module by the name specified then it looks for the existence of a 
+relative path to a file in the app. IE: if there is './path' or '../path' it assumes its a file within the app folder.
+
+** Parse Method **
+path.parse(__filename) <-- __filename is one of the arguments in the module wrapper function from last lesson.
+Now I'll save this in a vairable called pathObj then log it to console
+
+This returns: *Note: if I use my extension to run it via F8, the base and name are differently named because its ran from a temp file.
+{
+  root: 'D:\\',
+  dir: 'D:\\Node_tutorial\\first-app',
+  base: 'app.js',
+  ext: '.js',
+  name: 'app'
+}
+
+This has a few useful properties:
+root = The path to the root of the drive the file is on.
+dir = The path to the directory where the file is located within.
+base = name of the file with extension.
+ext = the extension only of the file.
+name = the name of the file minus extension.
+
+So, working with paths is way easier with the path module than working with strings.
