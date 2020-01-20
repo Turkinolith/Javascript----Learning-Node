@@ -1,0 +1,20 @@
+*******************
+**** OS Module ****
+*******************
+https://nodejs.org/dist/latest-v12.x/docs/api/os.html
+
+To load the module:
+const OS = require('os');
+
+There are some useful methods such as:
+freemem() returns how much free memory is on the machine.
+totalmem() returns memory total.
+userinfo([options]) Info about the current user.
+uptime() gets the uptime of the machine.
+
+Quick example of using it:
+
+const OS = require("os");
+const totalMemory = OS.totalmem();
+const freeMem = OS.freemem();
+console.log(`Total Mem: ${totalMemory} Free Mem:${freeMem}`);
