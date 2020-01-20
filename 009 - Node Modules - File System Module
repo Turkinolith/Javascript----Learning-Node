@@ -1,0 +1,25 @@
+****************************
+**** File System Module ****
+****************************
+https://nodejs.org/dist/latest-v12.x/docs/api/fs.html
+
+
+** IMPORTANT Note: ** Almost every operation defined in the file system module comes in 2 forms. Sync (or blocking) and async (non blocking) versions.
+Even though we have sync methods, we should avoid using them.  They are there purely for simplicity. In a real world app I should use async methods as they are non-blocking.
+If I'm using sync functions that'll keep the single node thread busy, so always use async methods.
+
+EX:
+For simplicity we will look at the sync form.
+	fs.readdirSync() - 1st argument is the path as a string.  IE: fs.readdirSync('./') <-- this shows all the files and folders within the current folder.
+So if I do this:
+	const files = fs.readdirSync('./');  //return an array of strings with the files and folders in the current folder.
+	// Returns: [ 'app.js', 'logger.js']
+	
+Async form of this method:
+	fs.readdir() - Like before, 1st argument is the path. 
+** IMPORTANT Note: ** All of these async methods take a function as their last argument. This function is what is ran when the async operation completes. This is called a "callback". In this functions case the callback has 2 parameters, an error, and result which is a string array.
+	So, here we need to check if we have an error or the result, only one of these will have a value. The other will be null.
+		fs.readdir('./', function(err, files) {
+		  if (err) console.log('Error', err);
+		  else console.log('Result', files);
+		});
