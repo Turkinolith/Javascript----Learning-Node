@@ -1,0 +1,40 @@
+*************************
+**** Event Arguments ****
+*************************
+Often when an event is raised we would want to send some data along with the event.
+Example: perhaps we have a remote logger service that generates an ID for the log message and we want to return that ID to the client. or it may give a URL to access that URL.
+At the end of the event emitter we can add event arguments. Below is my function to generate an event
+
+	function triggerAwake() {
+	  emitter.emit("LWB_AWAKE_01");
+	}
+Now, I'll add an ID# and URL string to it.
+
+	function triggerAwake() {
+	  emitter.emit("LWB_AWAKE_01", 001, 'url');
+	}
+
+This works, but the values can be confusing (what are they for? etc)
+If you want to send multiple values about an event It's considered a better practice to encapsulate those values inside of an object.
+
+	function triggerAwake() {
+	  emitter.emit("LWB_AWAKE_01", { id: 1, url: 'http://'});
+	}
+So, the object returned with the event string is called the "Event Argument"
+
+When registering the event listener, the callback function can also receive the Event Argument by passing it as a parameter to the function.
+
+Example:
+const EventEmitter = require("events");
+const emitter = new EventEmitter();
+emitter.on("LWB_AWAKE_01", (eventArg) => {
+  console.log(
+    `Hi Larry, I was woke up by ${eventArg.id} and targeted by ${eventArg.unit}`
+  );
+});
+setTimeout(triggerAwake, 3000);
+function triggerAwake() {
+  emitter.emit("LWB_AWAKE_01", { id: 001, unit: 999 });
+}
+
+**NOTE: By convention, people tend to use "arg" to refer to the event argument, or "e", or "eventArg" as I did.
