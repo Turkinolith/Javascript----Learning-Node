@@ -1,0 +1,92 @@
+************************************
+****** EXTENDING EventEmitter ******
+************************************
+
+In the real world its rare to directly work with the EventEmitter object directly. 
+Instead, you would make a class that has all of the capabilities of the EventEmitter and use that class in your code.
+
+Why?
+
+Consider the below example case
+***** APP.JS *****
+const EventEmitter = require("events");
+const emitter = new EventEmitter();
+
+emitter.on("logging", eventArg => {
+  console.log(eventArg);
+});
+
+const log = require("./logger");
+log("test message");
+
+***** logger.js *****
+const EventEmitter = require("events");
+const emitter = new EventEmitter();
+
+function log(message) {
+  // send an http request
+  console.log(message);
+
+  // Raise the event
+  emitter.emit("logging", {
+    message: "here is the logger message!"
+  });
+}
+
+module.exports = log; // * This would add the log function into the exports object of the module object.
+
+
+In the above case, I have 2 separate emitter objects. One in app.js and one in logger.js
+In the logger.js module that emitter is being used to emit an event where in the app.js I'm using another emitter to handle the event.
+
+So, when we register a listener in app.js its only registered with the app.js event emitter, not the one in logger.js.
+To fix this we can define a new class in logger.js that extends the EventEmitter, it copies all of its functionality, and adds new methods to it.
+Then, we export that class, create an instance of it within app.js, and call that class for raising events.
+That way all of the functionality is ran through a single object.
+
+Refresher on class:
+class is a constructor function, the name should be defined with PascalCase
+All functions/methods should not use the "function" keyword, just remove it.
+extends keyword allows the class to have all of the capabilities of the parent/base class.
+
+*** RECAP ***
+If you want to raise events to signal that something has happened, you need to create a class that extends EventEmitter. 
+With this, that class will have all the functionality defined in it, but you can add additional functionality. 
+Within that class, when ever you want to raise an event you use this.emit because this in that case refers to the logger class itself which extends EventEmitter.
+
+In App module instead of using an instance of EventEmitter, you use an instance of the custom class you defined.
+
+Refactored Code:
+***** App.js *****
+
+
+const Logger = require("./logger");
+const logger = new Logger();
+
+logger.on("logging", eventArg => {
+  console.log("listener called ", eventArg);
+});
+
+logger.log("Test Message");
+
+
+
+***** logger.js *****
+
+
+const EventEmitter = require("events");
+const url = "http://mylogger.io/log";
+class Logger extends EventEmitter {
+  log(message) {
+    // send an http request
+    console.log(message);
+
+    // Raise the event
+    this.emit("logging", {
+      message: "here is the logger message!",
+      url: url
+    });
+  }
+}
+module.exports = Logger;
+
