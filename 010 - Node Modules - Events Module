@@ -1,0 +1,27 @@
+***********************
+**** Events Module ****
+***********************
+https://nodejs.org/api/events.html
+
+	const EventEmitter = require('events');
+*Note the PascalCase, this convention refers to this being a "class" and not an object.
+In order to use the EventEmitter, I first have to create an instance of the class.
+	const emitter = new EventEmitter();
+	
+Its like: Class: Human, Object: Larry. The class is the framework, to use it you need an object of the class. Just like went over in JS OOP.
+
+A lot of node's core functionality is based on events.
+An Event is a signal that something has happened. (like events in wow)
+EX: For example in node we have a class called HTTP that we can use to build a web server. so, we listen on a given port and every time we received a request on that Port that HTTP class raises an event. 
+Our job is to respond to that event which basically involves reading that request and returning the right response. As you go through nodes documentation you can see that several classes in node raises different kinds of events that we might want to respond to.
+
+
+The emitter object has a bunch of methods, but regularly I'll use very few of them. 
+One is "emit()" used to raise an event. The argument is a string and is the name of the event raised. Just like Game Events in WOW, I will assign listeners for those specific events.
+
+Another is "addListener()", but it has an alias "on" which is the same thing in a different name. It takes 2 arguments. First is name of the event, second is a callback function or the actual listener that is called when the event happens. Similar to the action lists in wow which could be viewed as long strings of functions that can be conditionaly triggered off the callback.
+
+Thing to note: When the event is raised it runs through all of the registered listeners synchronously. So, just like in WOW, the listeners also need to be defined BEFORE the event is raised (so they can be there to listen for it.)
+
+
+
