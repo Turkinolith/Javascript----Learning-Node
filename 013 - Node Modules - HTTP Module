@@ -1,0 +1,96 @@
+*********************
+**** HTTP Module ****
+*********************
+https://nodejs.org/dist/latest-v12.x/docs/api/http.html   <-- HTTP
+https://nodejs.org/dist/latest-v12.x/docs/api/https.html  <-- HTTPS
+https://nodejs.org/dist/latest-v12.x/docs/api/http2.html  <-- HTTP/2
+
+One of the powerful building blocks of node is the http module.
+for example you can build a web server that listens for http requests on a given port. With this we can create a backed service for client applications. IE: Web App built with react, or a mobile app running on a mobile device.
+
+Each of the classes in the modules have several properties, methods, and events.
+	const http = require('http');
+	const server = http.createServer()
+This creates a webserver.
+An interesting thing is the server is an EventEmitter, so it has all of the capabilities of EventEmitter. it can do .on, .addListener, .emit and so on.
+Also, if you look on the documentation for class: http.Server it inherits from net.Server so its another class defined in the net module. There it says it is an EventEmitter.
+
+Now back in app.js lets have the server listen on a given port, in this case I'll use 3000
+	server.listen(3000);
+Then, so I know what happened add a simple console.log:
+	console.log("listening on port 3000...");
+
+When we run this the server will listen on port 3000.
+As mentioned before, every time there is a new connection/port request, the server raises an event. So, I can use the .on method to handle that event.
+
+Before listening we want to register the event listener/handler. 
+	server.on()  <-- The name of the event is 'connection', https://nodejs.org/dist/latest-v12.x/docs/api/http.html#http_event_connection
+	server.on('connection')
+The second argument is a callback function or the actual listener. As noted in the tooltip, the function has one argument (socket) of type Socket class and it returns void.
+
+	server.on('connection', (socket) => { console.log('New connection...') });
+	
+	
+So now the code as a whole looks like this:
+	const http = require("http");
+	const server = http.createServer();
+	server.on("connection", socket => {
+	  console.log("New connection...");
+	});
+	server.listen(3000);
+	console.log("listening on port 3000...");
+
+Run it and note that the terminal is sitting on "listening on port 3000" now.
+Try opening a browser window and go to localhost:3000
+Nothing happens in the browser, but in the terminal I get:
+D:\Node_tutorial\first-app>node http.js
+listening on port 3000...
+New connection...
+
+As seen, the server object raises diffent kinds of events that can be responded to. In RW apps we won't be often using the "connection" event to respond to, it's very low level. 
+
+What we commonly do is pass a callback function to the createServer method.
+	const server = http.createServer((req, res) => {
+	
+	})
+	
+Within this function, instead of working with a socket, we can work with the actual request or response objects. 
+In this case if request.url is a slash, send back to the client a response of "Hello World"
+	const server = http.createServer((req, res) => {
+	if (req.url === '/') {
+	  res.write('Hello World');
+	  res.end();
+	  }
+	})
+	
+Now, if I open a browser and open localhost:3000 I get: "Hello World"
+
+If I want to build a backend service I need to handle various routes.
+For example I can have another if block that looks at a different route:
+	if (req.url === '/api/courses') {
+	res.write()  <-- Here I'd like to return an array of objects. you do so using JSON
+	
+	if (req.url === '/api/courses') {
+	res.write(JSON.stringify([ {ID:1}, {ID:2}, {ID:3}, {ID:4} ]);  <-- Here I hard-coded the array of objects, but I could pull them from elsewhere. JSON.stringify will convert this array into a string using JSON syntax and then will write it to the response.
+	res.end();
+	}
+
+Now, if I browse to http://localhost:3000/api/courses I get:
+[
+{
+ID: 1
+},
+{
+ID: 2
+},
+{
+ID: 3
+},
+{
+ID: 4
+}
+]
+
+In the real world we won't use the HTTP module to build a backend service. The reason is because as we add more routes the code gets more complex because we have to add all of them linearly inside the callback function.
+So, instead we use a framework "express" that gives the program a clean structure to handle various routes.
+Internally the express framework is built on top of the HTTP module in node.
