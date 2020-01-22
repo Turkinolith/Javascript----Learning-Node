@@ -1,0 +1,32 @@
+*********************************
+**** Updating Local Packages ****
+*********************************
+
+To quickly see what packages have been updated and what are the new versions:
+	npm outdated
+This looks at the versions of dependencies and compares them with the npm registries.
+
+To update use the update command. **NOTE: This ONLY works for updating minor and patch releases. It will NOT update MAJOR version changes.
+	npm update
+
+Example: Package_	Current_	Wanted_		Latest_		Location_
+		mongoose	2.4.2		2.9.10		4.13.6		npm_demo
+
+In this case, mongoose that I have installed is 2.4.2, because in package.json I have ^2.x it means that I can go up to 2.9.10, BUT the latest version is 2 major versions away in 4.13.6
+I don't want to update and risk having a potentially breaking change to my program, so npm update by default will NOT update a major change as it could potentially be breaking.
+
+To install a newer major version I need to install a package globally:
+	npm install -g npm-check-updates
+
+Now I have a command line tool:  **NOTE: This has to be run from terminal or cmd.exe, windows powershell doesn't like it.
+	npm-check-updates
+	OR
+	ncu
+When I run this it will check dependencies again, listing them out and telling me the command to use to force a MAJOR version update.
+
+After doing this, it updates the package.json with the latest update BUT it has NOT INSTALLED THE UPDATE YET! This only updates the package.json.
+
+To install the dependency,
+	npm i
+
+Now, the dependencies are updated.
