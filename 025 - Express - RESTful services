@@ -1,0 +1,51 @@
+**************************
+**** RESTful Services ****
+**************************
+Also known as RESTful API's.
+
+REST = Representational State Transfer
+
+A convention for building HTTP services.
+
+CRUD Operations.
+Create, Read, Update, Delete data.
+
+
+Example: 
+Lets assume we have a company called "Vidly" who has a website that rents out movies.
+The client app manages the list of customers.
+On the server we expose a service at an endpoint like this:
+	http://vidly.com/api/customers
+The client can send http requests to this endpoint to talk to the customer service.
+
+A few things about this endpoint:
+The address can start with either http or https, it depends on the needs of our service. If the data needs to be exchanged on a secure channel it needs to be HTTPS.
+After that is the domain of the app.
+After that is /api. This is not compulsory but a lot of companies follow this convention to expose the RESTful services. it has API somewhere in the address. Either in the address or a sub-domain. there is no hard and fast rule.
+After that is /customers which is called a resource, it refers to the collection of customers in the application. This is the endpoint to work with customers. All of the operations with customers involve HTTP requests to this endpoint.
+The type of HTTP requests determines the operation.
+
+Standard HTTP Methods:
+GET - Read data
+POST - Create Data
+PUT - Update Data
+DELETE - Delete Data
+
+Get using customers example:
+Request: GET /api/customers  *Note the plural of this, the response should in turn be an array of customer objects.
+
+Get a singular customer:
+Request: Get /api/customers/4 *or any other specific ID number, the response should be a single customer object.
+
+Update using customer example:
+Request: PUT /api/customers/1 *Note, this is a specific entry but the customer object should be in the request with updated properties. Response is a customer ID updated with those values.
+
+Delete using customer example:
+DELETE /api/customers/1 *Note customer object isn't needed, just the ID#.
+
+Create using customer example:
+POST /api/customers *Note, no ID number to submit, we need a customer object in the request and the server returns a customer object that is filled out with ID#'s.
+
+
+This is the RESTful convention, we expose resources using a simple, meaningful address and support various operations around them using standard HTTP methods.
+Moving forward I'll be learning the EXPRESS framework, it will not initially be using a database and will manipulate data stored in memory. (Although in the REACT course I already covered this)
