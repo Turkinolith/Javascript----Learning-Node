@@ -1,0 +1,14 @@
+**************************************
+**** How Node require() functions ****
+**************************************
+
+When require is called node will take 3 steps to determine what to load.
+
+#1 it searches if the require is a Core module of Node.
+If it is not, move one
+
+#2 it checks if it is a file or folder in the project directory.
+	require('underscore') means it will look for a folder named underscore with an index.js within it in the project directory. if the path begins with './' it will look for a file named underscore
+failing that it moves to the next
+
+#3 it checks if a folder named the same exists in the node_modules folder within the project directory.
