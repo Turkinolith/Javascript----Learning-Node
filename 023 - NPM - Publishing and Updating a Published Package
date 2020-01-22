@@ -1,0 +1,19 @@
+******************************
+**** Publishing a Package ****
+******************************
+#1 make a project directory
+#2 make a package.json with npm init
+#3 Add files to the package.
+#4 npm login (username, Password, email address) - Note, email address is public.
+#5 npm publish
+	Note: package name needs to be unique, might need to add some random number to get it to pass.
+
+**************************************
+**** Updating a Published Package ****
+**************************************
+Depending on the kind of change you will need to update the version number.
+Major, Minor, patch
+
+Can update the version # by hand or by using npm:
+#1 - npm version (major/minor/patch)
+#2 - npm publish 
