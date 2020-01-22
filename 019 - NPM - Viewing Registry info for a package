@@ -1,0 +1,11 @@
+*********************************************
+**** Viewing Registry info for a package ****
+*********************************************
+to look at the info on a package from the command line (without having installed it first)
+	npm view packagename
+This has all of the meta-data like dependencies, version, etc.
+If this is too cluttered you can filter this down, like to show only the dependencies.
+	npm view packagename dependencies
+or view all released versions of the package:  *This is useful if you want to downgrade or upgrade to a specific version.
+	npm view packagename versions
+
