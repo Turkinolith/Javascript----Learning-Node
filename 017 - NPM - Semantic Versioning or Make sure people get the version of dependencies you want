@@ -1,0 +1,28 @@
+*****************************
+**** Semantic Versioning ****
+*****************************
+In package.json you will see the caret character "^" often used.
+What does this mean?
+To understand this I must first understand semantic versioning, or SemVer
+
+in Semantic Versioning the version of a node package has 3 components. IE: "mongoose": "^5.8.9",
+The first number is whats called "Major Version"
+The second is the "Minor Version"
+the third is the "Patch Version" or patch release which is used for bug fixes.
+	So if a new bug fix for mongoose comes out it would be updated to: 5.8.10
+
+The minor version is used for adding new features that don't break the existing API. 
+	So if they release a new feature it would be updated to: 5.9.0, patch version resets to zero because there are no bugs found in it yet. As bugs are found and fix the patch version goes up.
+
+Major changes to the API that could potentially break existing apps that depend on that version of mongoose would lead to a major version increase.
+	So the next major release would be 6.0.0, with the next non breaking update would be 6.1.0, with the first patch for that version being 6.1.1.
+
+The ^ character before the major version means that we don't care about what specific version of mongoose is, as long as it matches that major version. If there is a newer minor or patch version
+then we'd be interested in it as well.
+	IE: mongoose 5.x.x, if mongoose 5.9.0 or higher comes out, I'd still get it.
+
+In some apps instead of seeing a caret I'd see a tilde instead: ~5.8.9
+	That means I'm interested in any versions that match the major AND minor patch: IE 5.8.x
+	If there is a newer patch release, I'll get that as well but NOT a newer minor version.
+
+To ensure that the SPECIFIC version of the app you want (patch version and all) just remove any carets or tilde's from in front of the version number.
