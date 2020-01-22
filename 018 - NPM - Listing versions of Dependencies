@@ -1,0 +1,11 @@
+*********************************
+**** List installed Packages ****
+*********************************
+Chances are when you install a dependency that its version will be higher than the one specified in package.json.
+So, how to find what the specific version installed is? There are 2 ways.
+#1 Go into the package.json for the specific dependency and look at its version at the bottom of the file.
+#2 To show all of the dependencies at once: 
+	npm list
+Within this tree you will see the dependencies with their version number, and in turn all of their sub dependencies with their version numbers.
+If this list is too polluted and you don't care about the sub dependencies, use the flag --depth=0 to show only the main dependencies.
+	npm list --depth=0
