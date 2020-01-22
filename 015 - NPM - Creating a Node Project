@@ -1,0 +1,15 @@
+*************
+**** NPM ****
+*************
+
+Before creating a Node project, you should create a package.json file.
+This file has information about your project, such as the name, version, authors, address of git repository, dependencies, etc. It's meta-data 
+All node apps by standard have a package.json file.
+
+To create one run:
+npm init
+
+It will walk you step-by-step through creating the file.
+
+There is a faster way to do this if you just want the default answers:
+npm init --yes
