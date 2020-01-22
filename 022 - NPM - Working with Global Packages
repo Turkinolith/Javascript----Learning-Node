@@ -1,0 +1,15 @@
+**************************************
+**** Working with Global Packages ****
+**************************************
+
+When installing a package from NPM by default it is local, specific to the project folder that it is installed within.
+But there are some packages, command line tools and others, that you want to be global in scope and accessible from anywhere.
+npm itself is an example of this.
+
+to install a package globally use the -g flag.
+
+To check if a global package is outdated:
+npm -g outdated
+
+similarly to update:
+npm -g update
