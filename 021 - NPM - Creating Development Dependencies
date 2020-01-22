@@ -1,0 +1,8 @@
+**********************************
+**** Development Dependencies ****
+**********************************
+So far the dependencies outlined are for use in the project, but sometimes there are packages we want to used only during development. They should not go into the production environment.
+Lets install a package called jshint into the dev environment.
+	npm i jshint --save-dev
+Now, I can see that jshint is under a different property, "devDependencies"
+	All dependencies, regardless of type, are installed into node_modules folder, their only segregated in the package.json file.
