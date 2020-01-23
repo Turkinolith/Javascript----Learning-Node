@@ -1,0 +1,40 @@
+**************************
+**** Route Parameters ****
+**************************
+Currently I have a route to get a list of courses, now I'll create a route to get a single course.
+In order to get a single one I need to have the ID# of the course in the URL. 
+So, the endpoint needs to be like this:
+ /api/courses/1 <--Assuming 1 is the ID of the course.
+
+To do this:
+	app.get('/api/courses/  <-- here I need to define a parameter, so use a colon to do so
+	app.get('/api/courses/:id')  <-- id is the name of the parameter here. I could name it anything really, doesn't have to be id, could use courseID for example. Now add the route handler function to it.
+	app.get('/api/courses/:id', (req, res) => {
+	  res.send(req.params.id);
+	});
+
+*NOTE: This is only showing you the id parameter of the req object. This isn't pulling data from anywhere else.
+		IE: http://localhost:3000/api/courses/2 will return "2"
+			If I changed the send to: res.sent(req.params) http://localhost:3000/api/courses/2 will return { id: "2" }
+
+
+It is also possible to have multiple parameters in a route.  
+	IE: app.get('/api/courses/:year/:month', (req, res) => {
+		And the search term: http://localhost:3000/api/courses/2000/1  will return { year: "2000", month: "1" }
+		
+With Express I can also get query string parameters. 
+These are parameters that we add in the URL after a question mark.
+	IE: get all of the courses from year 2000, January, and sort them by name.
+	http://localhost:3000/api/courses/2000/1?sortBy=name
+The "?sortBy=name" is a query string parameter.
+
+We use route parameters for essential or required values and use query strings for anything that is optional.
+
+To read the query string on the backend:
+	res.send(req.query);
+	
+or to read it all in one go:
+app.get("/api/courses/:year/:month", (req, res) => {
+  let log = Object.assign(req.params, req.query);
+  res.send(log);
+});
