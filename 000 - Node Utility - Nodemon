@@ -1,0 +1,10 @@
+*****************
+**** Nodemon ****
+*****************
+This is an app that auto restarts node scripts on save.
+npm i -g nodemon
+
+To use, instead of starting apps with node, use nodemon instead.
+IE: nodemon index.js, nodemon app.js
+It will then watch for changes to any files within the folder it is started within. As soon as a file is saved with changes it will auto restart.
+Naturally it helps to start this up from a file in the top layer of the app file structure.
