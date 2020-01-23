@@ -23,7 +23,9 @@ To do this on the command line:
 In Windows: set PORT=5000
 In Mac: export PORT=5000
 
-To do this via environment file:
-.env.development
-.env.test
-.env.production
+
+Can also do this in environment files, but node doesn't auto use them on its own. 
+You have to set it up either as a configuration in VS Code, using a module, or in another way.
+
+To do so follow instructions here:
+https://www.freecodecamp.org/news/heres-how-you-can-actually-use-node-environment-variables-8fdf98f53a0a/
