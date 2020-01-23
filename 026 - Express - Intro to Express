@@ -1,0 +1,42 @@
+*****************
+**** Express ****
+*****************
+https://expressjs.com/
+
+Express is a very popular minimalist framework to build a webserver in node.
+
+When importing express, it imports as a function that returns an object. by convention that object is named app.
+	const express = require('express');
+	const app = express();
+
+There are methods to the app object just like the ones encountered using the HTTP module:
+app.get()
+app.post()
+app.put()
+app.delete()
+
+In this example I'll use only app.get() to implement a few listeners for get requests.
+
+*** app.get() ***
+This method takes 2 arguments. 
+#1 - Path or URL, EX: '/', '/api/customers', '/api/channels', etc.
+#2 - Callback function that is called when a GET request is made on that endpoint.
+A - The Callback function needs to have 2 arguments itself, (req, res) for Request and Response
+	app.get('/', (req,res) => {
+	  res.send('Hello World');
+	});
+	
+B - There are many useful paramters that can be passed from req and res, see the documentation here: http://expressjs.com/en/4x/api.html#req
+	Some are: baseUrl, body (to read the body of the request), cookies, fresh, hostname, params, etc.
+	
+#3 - after establishing routes, like done above, you need to start up a listener. First number passed is a port ID#, 2nd argument is optional but you can pass a function that will be called when
+the computer begins listening on the port.
+	app.listen(3000, () => console.log("listening on port 3000..."));
+
+#4 - Now, to add another route, just before the listener block I add this.
+	app.get("/api/courses", (req, res) => {
+	  res.send([1, 2, 3, 4, 5]);
+	});
+
+** Take away: In this implementation, I'm not building a large nest of if blocks. I define new routes by calling app.get and as the app grows I can move the definition of those routes to other files.
+	Example: I can move all of the routes related to courses to another file like courses.js, so express gives the app a structure.
