@@ -1,0 +1,29 @@
+*******************************
+**** Environment Variables ****
+*******************************
+One thing that needs to be fixed in the webserver is the hard-coded value for the port #.
+While this may work on the development machine it is unlikely to work in a production environment because when this is deployed to a hosting environment the port is dynamically assigned by the hosting environment.
+To fix this I need to use an environment variable.
+
+Typically in hosting environments for node apps there is an environment variable called PORT.
+
+An environment variable is basically a variable that is part of the environment in which a process runs.
+Example in react would be .env.production: REACT_APP_API_URL=###### vs .env.development: REACT_APP_API_URL=&&&&&&& which in turn were set in file using process.env.REACT_APP_API_URL
+
+process is a global object it has a property called env which is short for environment variable, then you add the name of the variable.
+
+	const port = process.env.PORT || 3000;
+	app.listen(port, () => console.log(`listening on port ${port}...`));
+	
+So, if the environment variable PORT exists, set it to the constant port, else, use 3000
+
+Now, to set an environment variable.
+
+To do this on the command line:
+In Windows: set PORT=5000
+In Mac: export PORT=5000
+
+To do this via environment file:
+.env.development
+.env.test
+.env.production
