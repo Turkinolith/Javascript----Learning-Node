@@ -1,0 +1,24 @@
+
+************************************
+**** Handling HTTP GET Requests ****
+************************************
+Remove the hard coded results to the HTTP GET requests from the /api/courses and /api/courses/:id handlers.
+Add a new constant, an array that holds a list of objects that have an ID# property.
+Now, convert the courses handler to return that array:
+	app.get("/api/courses", (req, res) => {
+	  res.send(courses);
+	});
+
+Next, implement a handler to search for one specific course when provided an ID#.
+When given a request for a specific ID, search through the array and look for an object who's ID param matches the request.
+
+	*NOTE: the req.params.id is a string where our ID values are numbers, so it needs to be converted using parseInt().
+	
+	app.get("/api/courses/:id", (req, res) => {
+	  const course = courses.find(c => c.id === parseInt(req.params.id));
+
+Next, convention says that if the result is not located that I should send a 404, for not found.
+I can do this by using res.status(404), I can also append to that a message with .send("string") to send a message with the 404.
+  if (!course) res.status(404).send(<h1>the course with the given ID was not found</h1>); // 404, also adding an error message.
+  res.send(course); //Return results
+});
