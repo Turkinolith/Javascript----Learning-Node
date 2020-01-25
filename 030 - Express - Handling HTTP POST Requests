@@ -1,0 +1,47 @@
+*************************************
+**** Handling HTTP POST Requests ****
+*************************************
+So far I've gone over GET requests to retrieve data. Now I'll handle a POST request to create new data.
+	app.post() <- since I'm using POST, use the post method. Makes sense right?
+
+Similar to the GET method I need to specify a path.
+	app.post('/api/courses' <-- Plural, because this is posting to the collection of courses.
+
+Now, add the route handler: 
+app.post('/api/courses', (req, res) => { });
+
+In the route handler, I need to read the course object that should be in the body of the request, use its properties to create a new course object, and add that object to the courses array.
+
+So, first define a variable to hold the data:
+	const course = { }
+	
+Since I'm not yet working with a database, I'll manually create the ID# by simply getting the length of the array and adding 1 to it.
+	const course = { id: courses.length + 1 } 
+In the future, when working with a DB the ID will be assigned by the DB.
+
+Next is the name property, to get this I need to read from the body of the request.
+	const course = { id: courses.length + 1, name: req.body.name } 
+Here I'm assuming that in the body of the req object we have a property called name. In order for this to work we need to enable parsing of JSON objects in the body of the request, by default that feature is 
+NOT enabled in express.
+
+at the top:
+	app.use(express.json());
+	This is adding a piece of middleware. When we call the express.json method it returns a piece of middleware, then we call app.use to use that middleware to use in the request processing pipeline.
+
+Now, I push course to courses.
+	courses.push(course);
+
+Finally, by convention when we POST an object to the server I should return that object in the body of the response.
+	res.send(course);
+That way the client will get the ID of the new object.
+
+I load up POSTMAN and set the endpoint path, change body to raw and format to JSON and create a JSON object:
+	{ "name": "Cowabunga" }    <-- **NOTE** The key "name" is also formatted as a string, don't forget to do that!
+
+I get in return a response:
+{
+    "id": 6,
+    "name": "Cowabunga"
+}
+
+Works well! No error handling or validation yet, but that comes up next.
