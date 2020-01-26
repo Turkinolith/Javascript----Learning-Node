@@ -1,0 +1,69 @@
+***************************************
+**** Handling HTTP Delete Requests ****
+***************************************
+Delete works just like the other CRUD operations I've worked with. Again, make sure to pass an ID parameter since it'll be attempting to delete a specific ID.
+
+	app.delete('/api/courses:id', (req, res) => {
+	});
+
+
+Now, lets chart out the logic of what is essential.
+*Stuff like validating user permissions to run this method, etc, will come later. Things like removing data should be behind some sort of auth.
+
+app.delete('/api/courses:id', (req, res) => {
+  // Look up the course
+  // doesn't exist? return 404
+  
+  // if exists, delete entry.
+  
+  // return the same course
+});
+
+
+So once again lets borrow code from the other route handlers.
+
+	app.delete('/api/courses/:id', (req, res) => {
+	  // Look up the course
+	  // doesn't exist? return 404
+	  const course = courses.find(c => c.id === parseInt(req.params.id));
+	  if (!course) res.status(404).send("The course ID was not found");
+
+	  // if exists, delete entry.
+	  
+	  // return the same course
+	});
+
+
+To delete a course, first I need to find the index of the course in the courses array.
+	courses.splice(courses.indexOf(course), 1);
+	res.send(course);
+
+	
+** BUG HANDLING **
+
+After checking the code, I noticed there was a bug where it was deleting extra entries. After checking with instructor there are actually 3 bugs here:
+
+#1 - In the PUT method I validate if a course exists, but I do not exit the function if it doesn't exist, so the rest of the code is still continuing to run.
+To properly fix this, if I don't have a course, return the response.
+	if (!course) {
+	res.status(404).send("The course ID was not found");
+	return;
+	}
+
+To make the code cleaner, I can just return the 404 statement all on one line, that allows me to get rid of the code block as well.
+	if (!course) return res.status(404).send("The course ID was not found");
+
+I can do the same thing in the invalid request blocks:
+	if (error) return res.status(400).send(error.details[0].message);
+	
+
+I have the same issue in the handler for delete requests.
+	if (!course) return res.status(404).send("The course ID was not found");
+	
+And same issue in the GET for a single course.
+	if (!course) return res.status(404).send("The course with the given ID was not found"); // 404, also adding an error message.
+	
+Finally, look at the handler for POST, lets clean up that code too.
+	if (error) return res.status(400).send(error.details[0].message);
+
+Now it looks like everything is working correctly.
