@@ -1,0 +1,239 @@
+************************************
+**** Handling HTTP PUT Requests ****
+************************************
+Lets handle updating a course. Add a new route handler:
+
+Here is the basic flow of what I'll need done.
+Look up the course, if it doesn't exist, return 404.
+If it does exist, validate the data. If the data is malformed return a 400
+If it validates, then update the data and return it.
+
+app.put("/api/courses/:id", (req, res) => {
+  //look up course
+  // if !, return 404
+  
+  // validate
+  // if invalid return 400 - bad request
+  
+  // Update course
+  // Return the updated course
+  });
+
+
+There is some code I can copy already. The look up course and return a 404 if it doesn't exist I've already written elsewhere.
+I've also already done validation. Now, it would be better to validate the data in only one location instead of copying it here, but I can refactor that later, lets get the function working first.
+
+
+app.put("/api/courses/:id", (req, res) => {
+  //look up course
+  // if !, return 404
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+  if (!course) res.status(404).send("The course ID was not found"); 
+
+
+  // validate
+  // if invalid return 400 - bad request
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+
+  const result = schema.validate(req.body);
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  // Update course
+  // Return the updated course
+});
+
+Now, lets work on the update section. Since the only field that can be updated in the current structure is the course name, then I'll update the constant name with the request name. (again, this is because I don't have it hooked up to a back-end yet.)
+
+app.put("/api/courses/:id", (req, res) => {
+  //look up course
+  // if !, return 404
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+  if (!course) res.status(404).send("The course ID was not found"); 
+
+
+  // validate
+  // if invalid return 400 - bad request
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+
+  const result = schema.validate(req.body);
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  // Update course
+  course.name = req.body.name;
+  res.send(course);
+});
+
+
+Now, its time to refactor the validation section and extract that logic into its own function so that I can use that function both in this and in the previous handler.
+So first I copy out the validation logic for the schema and checking against it and put it into a function called validateCourse that passes a course object as an argument.
+
+function validateCourse(course) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+const result = schema.validate(req.body);
+
+Next, lets change the copied code so that it works with this new format.
+The schema.validate method don't have req.body to point to, it needs to check vs the course object now. Also I don't need to save the result as a constant, I can simply pass that as the return value of the function.
+I could also do something later on like define my schemas as constants elsewhere and pass as a paramter into the validateCourse function as to which schema to check against, but lets table that for now.
+
+function validateCourse(course) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+return schema.validate(course);
+
+
+Back in the app.put, I'll return the result of the function and set that to a "result" constant kind of like I did earlier so I can then handle the result within the other function.
+Here is the full code at this point:
+
+app.put("/api/courses/:id", (req, res) => {
+  //look up course
+  // if !, return 404
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+  if (!course) res.status(404).send("The course ID was not found"); 
+
+
+  // validate
+  // if invalid return 400 - bad request
+  const result = validateCourse(req.body);
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  // Update course
+  course.name = req.body.name;
+  res.send(course);
+});
+
+
+// Validation
+function validateCourse(course) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+
+  return schema.validate(course);
+}
+
+This should work, but it could be made a bit cleaner by using object destructuring to shorten some of the .values such as result.error , since the 2 lines that I use it I'm only caring about the error property.
+
+** OBJECT DESTRUCTURING **
+When declaring a variable or constant add curly braces, then add the property of the target object.
+In this case the object returned from the validateCourse() method has 2 properties, error and value.
+So since I only want the error property:
+const { error } = validateCourse(req.body);
+then to use it: 
+if (error) {
+  res.status(400).send(error.details[0].message);
+
+
+Now, lets refactor the new validate method back into the previous GET method and verify everything works!
+*Test: GET ALL, GET VALUE, PUSH, PUT, GET ALL again, GET Invalid Value
+SUCCESS!
+
+** Final Code **
+const Joi = require("@hapi/joi");
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+
+const courses = [
+  { id: 1, Name: "Lorum" },
+  { id: 2, Name: "Ipsum" },
+  { id: 3, Name: "text" },
+  { id: 4, Name: "Is" },
+  { id: 5, Name: "Neat" }
+];
+
+// * GETS
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
+app.get("/api/courses", (req, res) => {
+  res.send(courses);
+});
+
+// When given a request for a specific ID, search through the array and look for an object who's ID param matches the request.
+app.get("/api/courses/:id", (req, res) => {
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+  if (!course)
+    //Make sure that something was found, if not return 404
+    res.status(404).send("The course with the given ID was not found"); // 404, also adding an error message.
+  res.send(course); //Return results
+});
+
+// * POSTS
+app.post("/api/courses", (req, res) => {
+  const { error } = validateCourse(req.body);
+
+  if (error) {
+    res.status(400).send(error.details[0].message);
+    return;
+  }
+
+  const course = {
+    id: courses.length + 1,
+    name: req.body.name
+  };
+  courses.push(course);
+  res.send(course);
+});
+
+// * PUTS
+app.put("/api/courses/:id", (req, res) => {
+  //look up course
+  // if !, return 404
+  const course = courses.find(c => c.id === parseInt(req.params.id));
+  if (!course) res.status(404).send("The course ID was not found");
+
+  // validate
+  // if invalid return 400 - bad request
+  const { error } = validateCourse(req.body);
+  if (error) {
+    res.status(400).send(error.details[0].message);
+    return;
+  }
+
+  // Update course
+  course.name = req.body.name;
+  res.send(course);
+});
+
+// Validation
+function validateCourse(course) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .required()
+  });
+
+  return schema.validate(course);
+}
+
+// * SET PORT AND START LISTENING
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on port ${port}...`));
