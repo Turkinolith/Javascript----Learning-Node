@@ -1,0 +1,39 @@
+**************************
+**** Input Validation ****
+**************************
+**KEY NOTE: NEVER EVER EVER TRUST WHAT THE CLIENT SENDS YOU, ALWAYS VALIDATE THE INPUT**
+
+Just like in the React class, this one has me use the joi package for validation.
+And just like in that instance I needed to adjust the format a bit to make it work with the new version:
+
+npm install @hapi/joi
+const Joi = require("@hapi/joi");
+
+Unlike in REACT, I don't need to put my schemas in the state, so they are a lot more direct to work with. 
+Here is the app.post handler written with schema validation:
+
+Right now it just gets the first error message in an error.details array and returns the message property from it.
+I could also get the message property of all of the errors and concat them, its purely preference.
+
+	app.post("/api/courses", (req, res) => {
+	  const schema = Joi.object({
+		name: Joi.string()
+		  .min(3)
+		  .required()
+	  });
+
+	  const result = schema.validate(req.body);
+
+	  if (result.error) {
+		res.status(400).send(result.error.details[0].message);
+		return;
+	  }
+
+	  const course = {
+		id: courses.length + 1,
+		name: req.body.name
+	  };
+	  courses.push(course);
+	  res.send(course);
+	});
+
