@@ -1,0 +1,39 @@
+**********************
+**** Environments ****
+**********************
+In a more complex application, you need to know what environment your code is running on.
+Is it a development environment or a production one? You might want to enable or disable features depending on the environment.
+	IE: enable morgan logging of HTTP requests only in the dev environment but not in production.
+
+Earlier on I went over the process object, its a global object in node that gives access to the current process.
+It has a property called .env that gives access to environment variables.
+There is a standard environment variable called: .NODE_ENV
+	This variable gives the environment for the app. If it is not set we will get "undefined"
+	Alternatively we can set this from the outside to development, testing, staging, or production.
+	
+Lets log this to the console using a template literal in clg.
+	console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+
+In my current app, its showing as undefined.
+
+Another way to get the value is the app object.
+	app.get('env'); 
+This will check the value of .NODE_ENV. HOWEVER if NODE_ENV is not set it will return "development" by default.
+
+** ACTIVATE FEATURES ONLY IN A DEV ENVIRONMENT **
+An example of using the environment to enable or disable certain features is:
+Lets assume we want to load morgan for logging but only in a development environment.
+
+if (app.get('env') === 'development') {
+  app.use(morgan('tiny'));
+  console.log('Morgan enabled...');
+}
+
+
+** Change the environment **
+Command line:
+	Mac:	export NODE_ENV=production
+	windows: set NODE_ENV=production
+
+OR
+Use the env file when running a debug session.
