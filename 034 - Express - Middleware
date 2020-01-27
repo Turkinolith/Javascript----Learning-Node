@@ -1,0 +1,100 @@
+********************
+**** Middleware ****
+********************
+Middleware is a function that takes a request object and either returns a response to the client or passes control to another middleware function.
+
+EX: the route handler function, in express every route handler is technicly a middleware function because it takes a request and returns a response to the client. it Terminates the request/response cycle.
+
+Another example is when we call express.json(), it returns a function, the job is to read the request and if there is a JSON in the body it will parse the body into a JSON object and set req.body property.
+
+Request Processing Pipeline:
+one or more middle ware functions that take a request and either returns a response or pass control to another middleware function.
+
+Example:
+Request => json() => route() => response 
+
+An express application is essentially nothing but a bunch of middleware functions.
+
+**********************************
+**** Create Custom Middleware ****
+**********************************
+To install a middleware function in the request processing pipeline:
+	app.use(function(req, res, next) {
+		//something 
+		next();    // Next is essential so that the function hands-off to the next step of the pipeline, otherwise the app will hang.
+	})
+
+Take this example from the express-demo project:
+
+app.use(express.json());
+
+app.use(function(req, res, next) {
+  console.log("Logging...");
+  next();
+});
+
+app.use(function(req, res, next) {
+  console.log("Authenticating...");
+  next();
+});
+
+When you send an HTTP GET request to the server, note that it will print out the "Logging..." and "Authenticating..." sequentially.
+*** Middleware functions run in series. ***
+
+
+*** HOW TO MOVE MIDDLEWARE FUNCTION TO A FILE ***
+In terms of clean coding you don't want to put all of your middleware in the index.js or app.js file or module.
+They should all go in a separate file or module.
+
+I create a new file, like logger.js
+So I cut the logging function from above and paste it into the logger.js file
+Then I give the function a name, like function log(req, res, next) {
+then export: module.exports = log;
+
+Back in index or app.js: const logger = require('./logger')
+
+Then, to use it call app.use(logger);
+
+So, that is essentially whats happening when using app.use(express.json());
+So when we call express.json() it returns a middleware function that has 3 parameters: req, res, next. 
+That middleware function parses req.body and if there is a JSON object it will set req.body and pass control to the next function.
+
+
+*****************************
+**** Built-in Middleware ****
+*****************************
+
+Similar to the express.json() middleware there is express.urlencoded()
+This parses incoming requests with URL encoded payloads.
+That is a request with a body like: key=value&key=value
+This is more of a traditional approach, not something used that often these days.
+	Basically if you have an HTML form with input fields and post that form to the server, the body will look like "key=value&key=value" the middleware parses the body and populates req.body like a JSON object.
+	
+Another built-in middleware is express.static() used to serve static files.
+	app.use(express.static("foldername"));  <- foldername being the name of a folder where static assets will reside, like CSS, images, etc.
+
+So in my express demo project I create a new folder called public, I create a file "readme.txt" in it with some text "this is a readme file"
+in app.js I put 
+	app.use(express.static("public"));
+Now if I open my browser I can navigate to:
+	http://localhost:3000/readme.txt
+And now view the readme.txt file, note that it doesn't have /public/ in the url, it's served from the root of the site.
+
+
+********************************
+**** Third Party Middleware ****
+********************************
+https://expressjs.com/en/resources/middleware.html
+Don't use every middleware function here, because each one will impact the performance of my app.
+
+One middleware that is considered "best practice" is "helmet" https://github.com/helmetjs/helmet
+	"Help secure express apps with various HTTP headers"
+
+Another good one to use is morgan: https://expressjs.com/en/resources/middleware/morgan.html
+	In this case I'm going to load it with the "tiny" format.
+With morgan in place every time I send a request to the server it will be logged.
+	GET /api/courses 200 116 - 2.000 ms
+I sent an HTTP GET request to the /api/courses endpoint. Result was status code 200, and 2.000 ms was the time it took to respond to the request.
+	This is the tiny format, if I want more details then set another format.
+	By default morgan logs the request on the console, but it can be configured to write to a log file. Again, when this is enabled it will slow down the pipeline. Might want to not enable this in production, or only enable it in certain situations.
+	
