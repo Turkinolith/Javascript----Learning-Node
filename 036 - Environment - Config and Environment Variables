@@ -1,0 +1,70 @@
+
+***********************
+**** Configuration ****
+***********************
+How to store config settings and override them in each environment.
+
+There are various node packages for managing configuration, the most popular is rc , however the instructor doesn't like it/found some bugs so prefers to use config.
+https://www.npmjs.com/package/config
+
+After installing it create a new folder named config
+then add 3 new files:
+default.json
+development.json
+production.json
+
+Example:
+in default.json I can put the following:
+{
+  "name": "My Express App"
+}
+
+In development.json I can override that data and add more data:
+{
+  "name": "My Express App - Development",
+  "mail": {
+    "host": "dev-mail-server"
+  }
+}
+
+And in production.json I can again override the data:
+{
+  "name": "My Express App - Production",
+  "mail": {
+    "host": "prod-mail-server"
+  }
+}
+
+
+To use these, back in app.js:
+const config = require('config');
+
+For testing purposes I put these lines in:
+// * Configuration
+console.log("Application Name: " + config.get("name"));
+console.log("Mail Server: " + config.get("mail.host"));
+
+In terminal: set NODE_ENV=development
+then,
+in terminal: nodemon app.js
+
+*** DON"T EVER SAVE YOUR SECRET DATA|PASSWORDS|ETC BY SAVING SECRET STUFF IN CONFIG FILES ***
+
+
+
+To store secrets, put those in environment variables.
+
+1 - Set up an environment variable: in the command line: set appname_password=1234
+2 - Set up a config file that will map the environment variable.
+	config/custom-environment-variables.json
+
+	Within it will only have the info that gets mapped.
+	IE: I have "mail" defined in production.json above, I also created an environment-variable in #1 above and I want to map it.
+		{
+		  "mail": {
+		    "password": "appname_password"
+			}
+		}
+
+And to show that I can load that value:
+	console.log('Mail Password: ' + config.get('mail.password'));
