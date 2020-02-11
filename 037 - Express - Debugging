@@ -1,0 +1,54 @@
+*******************
+**** Debugging ****
+*******************
+The debug package in node is a better way to debug than to use console.log all the time.
+Can replace all of the console.logs used with a call to a debug function, then can use an environment-variable to enable/disable debugging
+That way I don't have to keep coming back to the code and modifying it, can control it from the outside.
+Also can control the level of the debug info I want to see.
+
+In terminal:
+npm i debug (npx it?)
+
+in the module:
+require('debug')
+This require returns a function, we call the function and pass an argument. That argument is an arbitrary namespace that is used for debugging.
+For example: I can define a namespace like 'app:startup', then when I call this function with this argument I get a function for writing debug messages in that namespace.
+	const startupDebugger = require('debug')('app:startup');
+
+I can call multiple namespace debuggers, lets say one for debugging databases:
+	const startupDebugger = require('debug')('app:startup');
+	const dbDebugger = require('debug')('app:db');
+
+And to assign a debug line to a given namespace:
+	startupDebugger('debug line triggered...');
+or...
+	dbDebugger('Connected to the database...');
+
+
+Enabling debugging with Environment Variables:
+Now back at the terminal:
+	set DEBUG=app:startup
+		This means that any debug info set to the 'app:startup' namespace will be enabled.
+
+And of course to reset it:
+	set DEBUG=
+		This zeroes it out/removes it.
+
+Or for multiple namespaces:
+	set DEBUG=app:startup,app:db
+		This will set both of those namespaces to DEBUG
+
+Or if I want to enable every namespace I can use a wildcard:
+	set DEBUG=app:*
+
+There is also a faster way to set the level of debugging I want to see so I don't have to explicitly set the environment-variable.
+Can set it at the time of running the app.
+Lets say I only want to see app:db namespace:
+	DEBUG=app:db nodemon index.js 
+		or...
+	DEBUG=app:db node index.js
+		This sets the variable and then starts the app at the same time.
+		
+If I only am debugging a single thing in a given file I can simplify the syntax:
+	const debug = require('debug')('app:startup');
+	debug('something happened...');
