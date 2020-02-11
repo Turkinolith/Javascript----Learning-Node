@@ -1,0 +1,96 @@
+*************************************************************
+**** Templating Engines (Also making custom error pages) ****
+*************************************************************
+When building RESTful services, you don't absolutely need a view engine or templating engine. 
+It does allow some nice dynamic responses from the backend though.
+
+In the REST API endpoints so far I'm returning JSON objects in response. sometimes you need to return HTML markup to the client.
+That is where you use a templating engine.
+
+The most popular ones are: PUG, Mustache, and EJS.
+Each has a different syntax for generating dynamic html and returning it to the client.
+In this case I'll use pug.
+
+** TO USE ***
+Requires changing the 'view engine' property in Express. To do this call whatever express is loaded as.
+	const app = express();
+	app.set('view engine', 'pug');
+
+When this is set, express will internally load the pug module. So it doesn't have to be set as a required value.
+
+There is another optional setting if you want to override the path to templates:
+	app.set('views', './views');  <-- this means you put all of your templates within a folder called views which should be in the root of the application.
+
+I'll go ahead and make a views folder
+inside it I'll make a new file: 
+	index.pug
+
+With pug I can define a template with syntax like this:
+**The title that title is set equals to (and that message in the H1 is set to) is a variable that I can set at runtime.
+It is a whitespace sensitive html, there are no opening and closing elements.
+
+	html
+		head
+			title= title
+		body
+			h1= message
+
+
+** USING PUG IN AN EXAMPLE **
+Previously I defined this route for the root of the app:
+
+	app.get("/", (req, res) => {
+	  res.send("Hello World");
+	});
+
+Now, I'll replace its hardcoded string reply of "Hello World" with the dynamically generated HTML from pug.
+To do this instead of the send method I'll use the render method of res.
+This takes 2 arguments:
+1 - a string that is the name of the view
+2 - an object that has all the values for the parameters defined in the template. { variable1: 'Value for var1', variable2: 'value for var2' }
+
+	app.get("/", (req, res) => {
+	  res.render('index', {title: 'My Express App', message: 'Hi' });
+	});
+
+** VERIFYING THE RESULT **
+Now if I use postman or a browser and look at localhost:3000 (or whatever port the server loads on) I get:
+	<html>
+
+	<head>
+		<title>My Express App</title>
+	</head>
+
+	<body>
+		<h1>Hi</h1>
+	</body>
+
+	</html>
+
+Just like I defined in my index.pug!
+
+This is a cool way to serve dynamic 404 error pages among other things!
+Example: 404.pug
+	html
+    head
+        title= title
+    body
+        h1= message
+    img(src= image404)
+
+
+	app.get("/api/courses/:id", (req, res) => {
+	  const course = courses.find(c => c.id === parseInt(req.params.id));
+	  if (!course)
+		return res.status(404).render("404", {
+		  title: "Page Not Found",
+		  message: "4😦4 - The course you are looking for was not found",
+		  image404:
+			"https://i2.wp.com/learn.onemonth.com/wp-content/uploads/2017/08/1-10.png"
+		}); // 404, also adding an error message.
+	  res.send(course); //Return results
+	});
+
+
+So, if you want to return html markup to the client use a view engine.
+When building RESTful services, you don't absolutely need a view engine or templating engine. It does allow some nice dynamic responses from the backend though.
