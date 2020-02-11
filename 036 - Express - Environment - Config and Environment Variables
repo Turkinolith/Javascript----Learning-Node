@@ -50,7 +50,9 @@ in terminal: nodemon app.js
 
 *** DON"T EVER SAVE YOUR SECRET DATA|PASSWORDS|ETC BY SAVING SECRET STUFF IN CONFIG FILES ***
 
-
+*************************************************************
+**** Map environment variables to configuration settings ****
+*************************************************************
 
 To store secrets, put those in environment variables.
 
