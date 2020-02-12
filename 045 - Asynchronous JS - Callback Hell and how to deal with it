@@ -1,0 +1,106 @@
+***********************
+**** Callback Hell ****
+***********************
+One thing to note in the code from the previous lesson is the nested structure:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		return console.log(reps);
+	  });
+	});
+
+So, first we getUser, then we nest, go to getRepositories.
+In a real app, maby we want to do something after we get the list of repositiories, like go to the first one and get all of the comments within it.
+With the callbacks our code will get deeper with even more callbacks within it.
+It would look something like:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		getCommits(repo, (commits) => {
+		
+		});
+	  });
+	});
+
+This nested structure is hard to follow, where as a scynchronous version of the same thing would look something like:
+	const user = getUser(1);
+	const repos = getRepositories(user.getHubUsername);
+	const commits = getCommits(repos[0]);
+
+This deeply nested structure that is hard to read has been called "CALLBACK HELL" or sometimes a "CHRISTMAS TREE PROBLEM" because of the christmas tree shape it forms.
+
+
+So, how to solve Callback Hell?
+***************************************
+**** Named Functions to the Rescue ****
+***************************************
+To get rid of the nested structure the technique I'll use is to replace anon functions with named functions.
+Where are the anon functions above? Their all the callbacks, their functions without names.
+
+So, I'll replace all of the anon functions with named ones and with this it'll flatten the structure of the code.
+
+Here is the code again:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		getCommits(repo, (commits) => {
+		
+		});
+	  });
+	});
+
+I'll start at the deepest level, so the anon function within getCommits:
+
+#1 -
+	I'll make a new function that gets an array of commits, and lets say I want to display those commits on the console:
+		function displayCommits(commits) {
+		  console.log(commits);
+		}
+
+So, the structure of this function is similar to that found in the getCommits section, so I can just replace it.
+
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		getCommits(repo, displayCommits);
+	  });
+	});
+
+*** NOTE: I'm NOT CALLING the function displayCommits, just passing a reference to it ***
+
+continuing the exercise:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], getCommits);
+	});
+
+	function getCommits(reps) {
+	  getCommits(repo, displayCommits);
+	}
+
+	function displayCommits(commits) {
+	  console.log(commits);
+	}
+
+
+
+and finally:
+	getUser(1, getRepos);
+
+	function getRepos(user) {
+	  getRepositories(user["gitHubUsername"], getCommits);
+	}
+	
+	function getCommits(reps) {
+	  getCommits(repo, displayCommits);
+	}
+
+	function displayCommits(commits) {
+	  console.log(commits);
+	}
+
+
+So this cleaned it up a lot.
+What happens now is we call getUser()
+When we get the user, we call getRepos for that user.
+When we get the repositories we next call getCommits for that repository.
+When I call getCommits I then call displayCommits for that repository.
+When I call displayCommits, I console.log that commit.
+
+This method is not ideal, but its a little easier to read and we don't have the callback hell.
+A better way to deal with async is by using Promises.
