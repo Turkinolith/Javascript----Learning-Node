@@ -1,0 +1,154 @@
+*******************
+**** Callbacks ****
+*******************
+Lets go over how to use a callback to get the results of getting the user object.
+
+Here is the starting code:
+	console.log("Before");
+	getUser(1);
+	console.log("After");
+
+	function getUser(id) {
+	  setTimeout(() => {
+		console.log("reading a user from a database...");
+		return { id: id, gitHubUsername: "Larry" };
+	  }, 2000);
+	}
+
+First, lets adjust the signature of the getUser function, add another parameter that we will call: callback.
+
+** A callback is a function that I will call when the result of an async operation is ready. **
+
+function getUser(id, callback) {     <-- Inserted the parameter for a callback here.
+  setTimeout(() => {
+    console.log("reading a user from a database...");
+    return { id: id, gitHubUsername: "Larry" };   <-- I will initialize the callback and return within it this result.
+  }, 2000);
+}
+
+To create the callback function, just make a new element inside called callback (or whatever I end up calling the parameter) and pass inside of it the returned object.
+
+function getUser(id, callback) {
+  setTimeout(() => {
+    console.log("reading a user from a database...");
+	callback({ id: id, gitHubUsername: "Larry" })
+  }, 2000);
+}
+
+
+Now, I can't use the getUser call line as it currently exists. I'll need to pass in some function that will be called with the callback argument.
+
+getuser(1, function(user) {    <-- the function takes a user 
+  console.log("User", user);   <-- now I have access to the user object I return from the database.
+});
+
+
+Now the code looks like this:
+console.log("Before");
+getUser(1, function(user) {
+  console.log("User: ", user);
+});
+console.log("After");
+
+function getUser(id, callback) {
+  setTimeout(() => {
+    console.log("reading a user from a database...");
+    callback({ id: id, gitHubUsername: "Larry" });
+  }, 2000);
+}
+
+And the result of running it looks like this:
+D:\Node_tutorial\async-demo>node index.js
+Before
+After
+reading a user from a database...
+User:  { id: 1, gitHubUsername: 'Larry' }
+
+This is the example of a callback. When the result of an async operation is ready the function in the 2nd parameter of getUser() is called with the result.
+I can also write the callback in the arrow function syntax, its the same thing.
+getUser(1, (user) => {
+  console.log("User: ", user);
+});
+
+
+*** TASK:
+Lets write an async function that will take the results of reading the database for a user and get the gitHubUsername value, then return a list of all the repositories for that user.
+
+The sync version is:
+getUser (1, (user) => {
+  console.log("user", user);
+  
+  // get the Repositories
+});
+
+function getRepositories(username) {
+return ['repo1', 'repo2', 'repo3'];
+}
+
+
+
+** My solution: **
+console.log("Before");
+getUser(1, user => {
+  getRepositories(user["gitHubUsername"], reps => {
+    return console.log(reps);
+  });
+});
+console.log("After");
+
+function getUser(id, callback) {
+  setTimeout(() => {
+    console.log("reading a user from a database...");
+    callback({ id: id, gitHubUsername: "Larry" });
+  }, 2000);
+}
+
+function getRepositories(username, callback) {
+  setTimeout(() => {
+    console.log("Reading repositiories...");
+    callback({
+      gitHubUsername: username,
+      rep001: "Learning Notes",
+      rep002: "Javascript Notes",
+      rep003: "React Notes",
+      rep004: "Node Notes"
+    });
+  }, 2000);
+}
+
+** Returns:
+D:\Node_tutorial\async-demo>node index.js
+Before
+After
+reading a user from a database...
+Reading repositiories...
+{
+  gitHubUsername: 'Larry',
+  rep001: 'Learning Notes',
+  rep002: 'Javascript Notes',
+  rep003: 'React Notes',
+  rep004: 'Node Notes'
+}
+
+***** OR ********
+Can do the function like this if I just want to return a list of the repo names:
+	function getRepositories(username, callback) {
+	  setTimeout(() => {
+		console.log("Reading repositiories...");
+		callback([
+		  "Learning Notes",
+		  "Javascript Notes",
+		  "React Notes",
+		  "Node Notes"
+		]);
+	  }, 2000);
+	}
+
+and this returns:
+D:\Node_tutorial\async-demo>node index.js
+Before
+After
+reading a user from a database...
+Reading repositiories...
+[ 'Learning Notes', 'Javascript Notes', 'React Notes', 'Node Notes' ]
+
