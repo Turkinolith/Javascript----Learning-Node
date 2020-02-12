@@ -1,0 +1,24 @@
+******************************************************
+**** Asynchronous Javascript - Sync vs Async code ****
+******************************************************
+This section will recap JS async code and will be using the folder async-demo for this purpose.
+
+Here is a simple example of a syncronus or "blocking" program:
+	console.log("Before");
+	console.log("After");
+Once the first clg executes, it needs to complete before the 2nd line can begin.
+
+Here is an async example:
+	console.log("Before");
+	setTimeout(() => {
+	  console.log("reading a user from a database...");
+	}, 2000);
+	console.log("After");
+What do you expect to happen here? "Before" executes, then timeout happens and after 2 seconds it prints its reading, then After
+But thats not what occurs, what happens is before and after prints, then after 2 seconds reading prints. 
+This is because the setTimeout function is async, non blocking.
+When we call setTimeout it will schedule a function to be performed at some point in the future, in this case 2 seconds.
+After that timeout it'll call that function that I pass, the lambda expression with the clg.
+
+**NOTE: Async does not mean concurrent or multi-threaded. ***
+In node whenever you are dealing with operations that work with disk or network access, you are dealing with async code.
