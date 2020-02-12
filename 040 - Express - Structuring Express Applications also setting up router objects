@@ -1,0 +1,55 @@
+
+******************************************
+**** Structuring Express Applications ****
+******************************************
+*** Building Maintainable Routes ***
+Right now in my learning project I have most of the working code in my app.js file This is a very simple app but in a real application you don't want to have all that code in the main file.
+
+First thing to do is to extract all of the code for the courses api and put them into a separate file.
+In other words, for every logical part of the app, for every API endpoint, I'll want a separate file
+All the files working with courses should be in courses.js, all the files dealing with something else, like authors, should be in authors.js.
+
+#1 -
+	Add a new folder in the root of the application, call it "routes"
+	Within it add a new file: courses.js
+	
+#2 - 
+	Select all of the code in app.js that works with courses and paste it into the courses.js. The GET, POST, PUT, and DELETE and any related sub-functions like validation.
+
+#3 - 
+	Next, lets fix the file: 
+	load express:
+		const express = require("express");
+	in app.js I set app = express(), but this approach does not work when I separate the routes in a separate module. Instead I'll need to use a router.
+		the express object has a method .Router() that returns a router object. 
+			const app = express.Router();
+		For clarity, lets rename the app to Router to show that it's a different type of object we are working with.
+		So, in the courses module (and any other route modules) instead of working with the app object we will work with the router object.
+		
+		**To rename all instances at once in VSCODE, select [app] and you will get a highlight on all instances of that object in the code, hit F2 and it'll allow you to rename it, press enter and all instances will be renamed.
+	
+	Finally, at the end of the module I need to export the router.
+		module.exports = router;
+
+In Summary:
+	I get the router on the top, add routes to it, and finally export the router at the end of the module.
+
+
+
+** How to use a Router object in the main app.file **
+Now need to load the courses module in the main app file.
+		const courses = require('./routes/courses');
+		
+Finally, once I load this module I need to call app.use(), I need to supply 2 arguments. #1 is a path, #2 is a router object that I imported.
+	app.use('/api/courses', courses);
+Basically I'm telling express that any routes that start with the path in #1: '/api/courses' to use the #2 router object: courses.
+	With this in place, I can go back into the courses module and make the routes shorter since the '/api/courses' is now understood.
+		IE: I can replace all instances inside the courses.js module of '/api/courses' with simply '/'
+				For those with a parameter like: '/api/courses/:id' I can just cut it down to '/:id'
+
+
+** Middleware **
+Earlier on I created the "logger" middleware file for the application. logger.js
+In terms of structure its possible to have multiple middleware functions, so its better to put them in a folder called middleware, and move it inside of that folder.
+Also, update the file structure in the require to point to the new location.
+
