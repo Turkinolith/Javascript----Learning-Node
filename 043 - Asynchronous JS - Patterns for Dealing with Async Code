@@ -1,0 +1,49 @@
+**********************************************
+**** Patterns for Dealing with Async Code ****
+**********************************************
+Using the previous example of async code, I'll make it a "little more real"
+
+I'll move the setTimeout lines into its own function that I'll call getUser:
+	function getUser() {
+		setTimeout(() => {
+			console.log("reading a user from a database...");
+		  }, 2000);
+	}
+	
+Next, I'll modify it so that it can take an argument called "id" which will represent a request to get a user object from the database.
+	function getUser(id) {
+		setTimeout(() => {
+			console.log("reading a user from a database...");
+		  }, 2000);
+	}
+
+Now, to return the user object:
+When I read the user from the database, right after that I'm going to return an object with the ID property and a gitHubUsername property.
+	function getUser(id) {
+		setTimeout(() => {
+			console.log("reading a user from a database...");
+			return { id: id, gitHubUsername: 'Larry' };
+		  }, 2000);
+	}
+
+And here is the final code:
+	console.log("Before");
+	getUser(1);
+	console.log("After");
+
+	function getUser(id) {
+		setTimeout(() => {
+			console.log("reading a user from a database...");
+			return { id: id, gitHubUsername: 'Larry' };
+		  }, 2000);
+	}
+
+So, considering the data being returned from the setTimeout lambda is happening AFTER 2 seconds, and well after the data has sequentially ran through the initial console.log, the call of the getUser function, and the second console.log, 
+how do we save it when the data is returned?
+
+*** There are 3 patterns to deal with Async code ***
+Callbacks
+Promises
+Async/await (which are syntactical sugar over promises)
+
+The next lessons will go into each of these more in depth.
