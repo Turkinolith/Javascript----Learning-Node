@@ -1,0 +1,11 @@
+******************************
+**** Database Integration ****
+******************************
+https://expressjs.com/en/guide/database-integration.html
+
+This link are the various db options available to use through Express.
+Working with them is all the same: you install a driver for the db type you want to use, then you get a module with a simple API.
+
+
+In the case of MongoDB specifically	there is another package called "Mongoose" which is built on top of the MongoClient.
+Instead of using MongoClient driver directly, we use Mongoose because it gives a simpler API.
