@@ -1,0 +1,81 @@
+****************************
+**** Consuming Promises ****
+****************************
+
+function getCommits(repo) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      console.log("Calling GitHub API...");
+      res(["commit"]);
+    }, 2000);
+  });
+}
+
+Using the above example I'll call the promise:
+
+	const commit = getCommits(20); // I'm calling getCommits and passing a repo#, 20 in this case) I store that promise in a constant
+// There are 2 methods to a promise object, then and catch. 
+// What is the expected return from the getCommits function? an array of commits.
+	commit.then(commit => console.log(commit));
+
+without the comments:
+	const commit = getCommits(20);
+	commit.then(commit => console.log(commit));
+
+
+This works, but it can be simplified, I can get rid of the constant and chain then to what I get from the getUser function.
+
+get(commits(20).then(commit => console.log(commit));
+
+////////////////////////////////////////////////////
+Here is an example of chaining together promises. Note that each time we call another function that returns a promise we run a .then on its result as well.
+As a best practice when working with promises we should make sure to catch any errors.
+
+console.log("Before");
+
+getUser(1)
+.then(user => getRepositories(user.gitHubUsername))  //* Handles results of the getUser promise.
+.then(repos => getCommits(repos[0]))                 //* Handles results of the getRepositories promise.
+.then(commits => console.log("Commits", commits))   //* Handles results of the getCommits promise.
+.catch(err => console.log("Error", err.message));
+
+console.log("After");
+
+function getUser(id) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      console.log("Reading a user from a database...");
+      res({ id: id, gitHubUsername: "mosh" });
+    }, 1000);
+  });
+}
+
+function getRepositories(username) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      console.log("Calling GitHub API...");
+      res(["repo1", "repo2", "repo3"]);
+    }, 2000);
+  });
+}
+
+function getCommits(repo) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      console.log("Calling GitHub Commit API...");
+      res(["commit"]);
+    }, 2000);
+  });
+}
+
+//////////////////////////////////////////////
+Returns:
+
+Before
+After
+Reading a user from a database...
+Calling GitHub API...
+Calling GitHub Commit API...
+Commits [ 'commit' ]
+
+Next I'll be going over how to make it even more simple than it currently is.
