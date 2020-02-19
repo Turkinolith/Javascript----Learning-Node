@@ -1,0 +1,132 @@
+**************************************
+**** Running Promises in Parallel ****
+**************************************
+
+Sometimes you want to run a few operations in parallel and when they all complete then do something.
+Example: Call different API's like Facebook API and Twitter API, and when both promises resolve then return something to the user.
+
+To do this I use the all method on the Promise class. For its parameters you give it an array of promises.
+	Promise.all([#,#,#])  
+This method will return a new promise that will be resolved when all the promises within the array are resolved.
+You can then treat it like a normal promise in how to use it:
+	Promise.all([p1, p2])
+	  .then(result => console.log(result))
+	  .catch(err => console.log("Error: ", err));
+
+So in this example:
+	const p1 = new Promise(res => {
+	  setTimeout(() => {
+		console.log("Async Operation 1...");
+		res(1);
+	  }, 2000);
+	});
+
+	const p2 = new Promise(res => {
+	  setTimeout(() => {
+		console.log("Async Operation 2...");
+		res(2);
+	  }, 2000);
+	});
+	
+	Promise.all([p1, p2])
+	  .then(res => console.log(res))
+	  .catch(err => console.log("Error ", err));
+
+returns:
+	Async operation 1...
+	Async operation 2...
+	[1, 2]
+
+So it returns an array of the results.
+
+*NOTE* This isn't' real concurrency, this is NOT multi-threading, its a single thread but has multiple async operations.
+
+
+
+*** What if a promise in an .all array fails? ***
+
+Lets refactor the code to make a failure state:
+	const p1 = new Promise((res, rej) => {
+	  setTimeout(() => {
+		console.log("Async Operation 1...");
+		rej(new Error("Because something failed."));
+	  }, 2000);
+	});
+
+	const p2 = new Promise(res => {
+	  setTimeout(() => {
+		console.log("Async Operation 2...");
+		res(2);
+	  }, 2000);
+	});
+
+	Promise.all([p1, p2])
+	  .then(res => console.log(res))
+	  .catch(err => console.log("Error ", err.message));
+
+Returns: 
+	Async Operation 1...
+	Error  Because something failed.
+	Async Operation 2...
+	
+The take-away is if any of the promises in the array fail, then the .all promise is considered rejected.
+
+
+
+*** What if I want something to happen as soon as one of the many async operations completes, like as soon as 1 of them is true? ***
+
+Instead of Promise.all, use Promise.race.  Once again you pass an array of promises and as soon as one is fulfilled the promise returned from the race
+method is considered fulfilled or rejected and it returns the value of the first fulfilled promise
+
+Race with a reject wins:
+	const p1 = new Promise(res => {
+	  setTimeout(() => {
+		console.log("Async Operation 1...");
+		res(1);
+	  }, 2000);
+	});
+
+	const p2 = new Promise((res, rej) => {
+	  setTimeout(() => {
+		console.log("Async Operation 2...");
+		rej(new Error("Fast Fail"));
+	  }, 200);
+	});
+
+	Promise.race([p1, p2])
+	  .then(res => console.log(res))
+	  .catch(err => console.log("Error ", err));
+
+Returns:
+	Async Operation 2...
+	Error  Error: Fast Fail
+		at Timeout._onTimeout (D:\Node_tutorial\async-demo\promise-api.js:23:9)
+		at listOnTimeout (internal/timers.js:531:17)
+		at processTimers (internal/timers.js:475:7)
+	Async Operation 1...
+
+
+
+Race with a return wins:
+	const p1 = new Promise(res => {
+	  setTimeout(() => {
+		console.log("Async Operation 1...");
+		res(1);
+	  }, 2000);
+	});
+
+	const p2 = new Promise((res, rej) => {
+	  setTimeout(() => {
+		console.log("Async Operation 2...");
+		res(2);
+	  }, 200);
+	});
+
+	Promise.race([p1, p2])
+	  .then(res => console.log(res))
+	  .catch(err => console.log("Error ", err));
+
+Returns:
+	Async Operation 2...
+	2
+	Async Operation 1...
