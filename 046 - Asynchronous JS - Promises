@@ -1,0 +1,49 @@
+******************
+**** Promises ****
+******************
+
+A promise is an object that holes the eventual result of an async operation
+It can have 3 states:
+Initially it'll be in the [pending] state.
+Then it'll kick off an async operation and it will become either [fulfilled] everything was successful, or if something goes wrong it'll go in the [Rejected] state, and we'll have an error.
+
+	const p = new Promise()
+This constructor function takes an argument. It is a function with 2 paramters.
+	function(resolve, reject)
+or use arrow syntax
+
+	const p = new Promise((resolve, reject) => {
+		//This will kick off some sort of async work
+		//eventually we should either have a value or an error
+		//if value we want to return it to the consumer of the promise.
+		//Somewhere we're going to consume the promise because it promise it'll give us the result of the async operation.
+		// to do this we use either the resolve or reject functions
+		
+		resolve(1);
+		//reject(new Error('message'));
+	});
+	
+	the promise object has 2 methods on it:
+	p.catch <-- catches errors
+	p.then <-- gets the result returned from the promise.
+	
+	p.then(result => console.log("Result", result));
+	
+The below is configured to be more "real" it will call a 2 second delay async function then return the result.
+In this case, it will return an error.
+The p block below it is configured to catch the error and display it, or to display the result.
+To configure which is displayed, simply uncomment the resolve line or the reject line.
+	
+	const p = new Promise((resolve, reject) => {
+	  setTimeout(() => {
+		//resolve(1);
+		reject(new Error("delay error"));
+	  }, 2000);
+	});
+
+	p.then(result => console.log("Result", result)).catch(err =>
+	  console.log("Error", err.message)
+	);
+
+*TAKE AWAY*
+Anywhere we have an async function that takes a callback I should modify it to return a promise.
