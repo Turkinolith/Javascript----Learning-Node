@@ -1,0 +1,40 @@
+***********************************
+**** Creating Settled Promises ****
+***********************************
+This will explore more of the promise api.
+
+#1 - Sometimes you want to create a promise that is already resolved.
+	This is useful for writing unit tests to simulate a scenario where an async operation completes successfully.
+
+	Promise.resolve() <-- This will return a promise that is already resolved. Can optionally pass a value.
+	
+Ex:
+	const p = Promise.resolve({ id: 1 });
+	p.then(res => console.log(res));
+	
+// Returns: 
+	{ id: 1 }
+
+
+
+#2 - Sometimes you want to create a promise that is already rejected.
+	In this case instead of calling the resolve method, call reject and pass an error object.
+
+Ex:
+		const p = Promise.reject(new Error("Reason for rejection..."));
+		p.catch(err => console.log(err));
+		
+// Returns:
+	
+		Error: Reason for rejection...
+		at Object.<anonymous> (D:\Node_tutorial\async-demo\promise-api.js:6:28)
+		at Module._compile (internal/modules/cjs/loader.js:955:30)
+		at Object.Module._extensions..js (internal/modules/cjs/loader.js:991:10)
+		at Module.load (internal/modules/cjs/loader.js:811:32)
+		at Function.Module._load (internal/modules/cjs/loader.js:723:14)
+		at Function.Module.runMain (internal/modules/cjs/loader.js:1043:10)
+		at internal/main/run_main_module.js:17:11
+	
+	This is the call stack that all error objects return. This is why you should use an error object for the error test.
+	If you just pass a string for the reject, you won't get a call stack with it.
+* When Rejecting promises, always use an error object.
