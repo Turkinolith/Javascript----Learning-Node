@@ -1,0 +1,205 @@
+*************************************************************
+**** How to refactor callbacks into async/await promises ****
+*************************************************************
+
+
+
+******************************************
+**** #1 Named Functions to the Rescue ****
+******************************************
+To get rid of the nested structure the technique I'll use is to replace anon functions with named functions.
+Where are the anon functions above? Their all the callbacks, their functions without names.
+
+So, I'll replace all of the anon functions with named ones and with this it'll flatten the structure of the code.
+
+Here is the code again:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		getCommits(repo, (commits) => {
+		
+		});
+	  });
+	});
+
+I'll start at the deepest level, so the anon function within getCommits:
+
+#1 -
+	I'll make a new function that gets an array of commits, and lets say I want to display those commits on the console:
+		function displayCommits(commits) {
+		  console.log(commits);
+		}
+
+So, the structure of this function is similar to that found in the getCommits section, so I can just replace it.
+
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], reps => {
+		getCommits(repo, displayCommits);
+	  });
+	});
+
+*** NOTE: I'm NOT CALLING the function displayCommits, just passing a reference to it ***
+
+continuing the exercise:
+	getUser(1, user => {
+	  getRepositories(user["gitHubUsername"], getCommits);
+	});
+
+	function getCommits(reps) {
+	  getCommits(repo, displayCommits);
+	}
+
+	function displayCommits(commits) {
+	  console.log(commits);
+	}
+
+
+
+and finally:
+	getUser(1, getRepos);
+
+	function getRepos(user) {
+	  getRepositories(user["gitHubUsername"], getCommits);
+	}
+	
+	function getCommits(reps) {
+	  getCommits(repo, displayCommits);
+	}
+
+	function displayCommits(commits) {
+	  console.log(commits);
+	}
+
+********************************************
+**** #2 Replace Callbacks with Promises ****
+********************************************
+Here is the original function:
+
+	function getUser(id, callback) {
+	  setTimeout(() => {
+		console.log("Reading a user from a database...");
+		callback({ id: id, gitHubUsername: "mosh" });
+	  }, 2000);
+	}
+
+1- have it generate a new promise
+	function getUser(id, callback) {
+	  return new Promise((res, rej) => {
+		
+	  })
+	  setTimeout(() => {
+		console.log("Reading a user from a database...");
+		callback({ id: id, gitHubUsername: "mosh" });
+	  }, 2000);
+	}
+
+2- Next, move into the primise code block the async function.
+
+	function getUser(id, callback) {
+	  return new Promise((res, rej) => {
+		setTimeout(() => {
+		  console.log("Reading a user from a database...");
+		  callback({ id: id, gitHubUsername: "mosh" });
+		}, 2000);
+	  });
+
+	}
+	
+3- Next, remove the callback from the original function arguments and replace the code block callback with the result to return.
+
+	function getUser(id) {
+	  return new Promise((res, rej) => {
+		setTimeout(() => {
+		  console.log("Reading a user from a database...");
+		  res({ id: id, gitHubUsername: "mosh" });
+		}, 2000);
+	  });
+	}
+
+
+
+***********************************************************
+**** #3 Change Promises into Async and Await Functions ****
+***********************************************************
+
+
+Here is the code I wrote in the earlier lesson:
+	getUser(1)
+	  .then(user => getRepositories(user.gitHubUsername)) //* Handles results of the getUser promise.
+	  .then(repos => getCommits(repos[0])) //* Handles results of the getRepositories promise.
+	  .then(commits => console.log("Commits", commits)) //* Handles results of the getCommits promise.
+	  .catch(err => console.log("Error", err.message));
+ 
+ 
+Async and Await approach:
+	
+The getuser() function returns a promise, anytime I call a function that returns a promise I can await the result.
+I can then get the result by calling a synchronous function.
+
+IE: 
+	const user = await getUser(1);
+
+Similarly, now that I have a user object I can call getRepositories to get the respositiries of that user.
+	getRepositories(user.gitHubUsername);
+Again, this function returns a promise, so I can await the result and store it in a variable
+	const repos = await getRepositories(user.gitHubUsername);
+Now that I have the repos I can call getCommits, pass the first repos, and because it agian returns a promise I await it and store the result.
+	const commits = await getCommits(repos[0]);
+
+So, the code looks like this all together:
+	const user = await getUser(1);
+	const repos = await getRepositories(user.gitHubUsername);
+	const commits = await getCommits(repos[0]);
+	console.log(commits);
+
+Now this code is way easier to read than the callback and the promise based versions. I didn't have to go through a chain of .then method calls.
+
+BUT WAIT! WHERE IS ASYNC?
+When you use the await operator in a function you need to decorate that function with the async modifier.
+In the example above I've written the lines outside of a function.
+In JS you have to use await inside of a function, so the above lines won't work as-is.
+
+Lets define a wrapper function for the above, I'll call it "displayCommits", because after everything is done I'm displaying the commits for this user.
+Don't forget to decorate it with async!
+
+	async function displayCommits() {
+	  const user = await getUser(1);
+	  const repos = await getRepositories(user.gitHubUsername);
+	  const commits = await getCommits(repos[0]);
+	  console.log(commits);
+	}
+
+In the editor if I try to call the function I get this tooltip:
+	displayCommits(): Promise<void>
+Its returning a promise of void, which means that the promise once fulfilled doesn't result in a value, its void.
+its telling me that async and await are built on top of promises. its syntatic sugar that lets us write the code in a way that looks synchronous.
+When the JS engine converts the code it'll write it in a way that looks much like the promise-based approach.
+
+In terms of the code execution when the JS engine exectures displayCommits():
+	#1 - It executes "await getUser(1)", at this point it is going to release the thread and make it available to do other work.
+	#2 - When we get the result of getUser(1) it executes "const user = getUser"
+	#3 - Next it executes "await getRepositories(user.gitHubUsername)", it releases the thread to do other work.
+	#4 - When we get the result, it executes "const repos = getRepositories"
+	#5 - Next it executes "await getCommits", releasing the thread to do other work.
+	#6 - When it gets the result it executes "const commits = getCommits"
+	#7 - Next it executes "console.log(commits)" and exits.
+
+*** Error Handling Try/Catch***
+In the Promise based approach I used the .catch to get any errors.
+When using async and await I don't have this catch method.
+The way to get the errors is to use a try/catch block.
+So, inside of the function, wrap the async code inside of a try block.
+after the try block we add a catch block that gets an error object.
+So, I try to execute the lines and if anything goes wrong then the catch block is executed.
+
+	async function displayCommits(userID) {
+	  try {
+		const user = await getUser(userID);
+		const repos = await getRepositories(user.gitHubUsername);
+		const commits = await getCommits(repos[0]);
+		console.log(commits);
+	  } catch (err) {
+		console.log("Error", err.message);
+	  }
+	}
+
+When using async and await, you need to wrap your async code within a try/catch block.
