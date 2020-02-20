@@ -1,0 +1,87 @@
+In this exercise I need to refactor the below code to use async/await promises:
+
+////////////////////////////////////////////////////////////////////
+
+getCustomer(1, (customer) => {
+  console.log('Customer: ', customer);
+  if (customer.isGold) {
+    getTopMovies((movies) => {
+      console.log('Top movies: ', movies);
+      sendEmail(customer.email, movies, () => {
+        console.log('Email sent...')
+      });
+    });
+  }
+});
+
+function getCustomer(id, callback) {
+  setTimeout(() => {
+    callback({ 
+      id: 1, 
+      name: 'Mosh Hamedani', 
+      isGold: true, 
+      email: 'email' 
+    });
+  }, 4000);  
+}
+
+function getTopMovies(callback) {
+  setTimeout(() => {
+    callback(['movie1', 'movie2']);
+  }, 4000);
+}
+
+function sendEmail(email, movies, callback) {
+  setTimeout(() => {
+    callback();
+  }, 4000);
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+// My solution Below
+/////////////////////////////////////////////////////////////////////////////////
+
+emailTopMovies();
+
+async function emailTopMovies(ID) {
+  try {
+    const customer = await getCustomer(ID);
+    console.log("Customer: ", customer);
+    if (customer.isGold) {
+      const topMovies = await getTopMovies();
+      console.log("Top movies are: ", topMovies);
+      await sendEmail(customer.email, topMovies);
+    }
+  } catch (err) {
+    console.log("Error: ", err.message);
+  }
+}
+
+function getCustomer(id) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      res({
+        id: 1,
+        name: "Mosh Hamedani",
+        isGold: true,
+        email: "email@moshemail"
+      });
+    }, 2000);
+  });
+}
+
+function getTopMovies() {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      res(["movie1", "movie2"]);
+    }, 2000);
+  });
+}
+
+function sendEmail(email, movies) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      res(console.log("Email sent to", email, " of movies:", movies));
+    }, 2000);
+  });
+}
