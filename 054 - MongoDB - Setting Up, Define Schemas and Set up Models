@@ -1,0 +1,114 @@
+
+*******************************
+**** Connecting to MongoDB ****
+*******************************
+In Windows: cd to C:\Program Files\MongoDB\Server\4.2\bin
+Run command: mongod
+by default it will start the server at port 27017
+**alternatively the robomongo app will create a GUI for setting up the DB
+
+I create a new text project for this.
+install mongoose 5.9.1
+https://mongoosejs.com/docs/api.html#mongoose_Mongoose
+
+** NOTE: TO FIX DEPRECATION WARNINGS **
+https://mongoosejs.com/docs/deprecations.html
+
+
+	const mongoose = require('mongoose');
+	//* Below 4 settings are to remove deprecation warnings. 
+	mongoose.set("useNewUrlParser", true);
+	mongoose.set("useFindAndModify", false);
+	mongoose.set("useCreateIndex", true);
+	mongoose.set("useUnifiedTopology", true);
+	
+This connection string is hardcoded, but in a real app it should be located in a cfg file.
+	mongoose.connect('mongodb://localhost/playground') 
+
+The connect method returns a promise. So I can run .thens on it.
+
+	mongoose
+	  .connect("mongodb://localhost/playground")
+	  .then(() => console.log("connected to MongoDB..."))
+	  .catch(err => console.log("Could not connect to MongoDB...", err.message));
+ 
+It should now be able to connect to the DB
+
+
+*****************
+**** Schemas ****
+*****************
+The next thing I should be able to do is to create a Schema.
+Schemas are used to define the shape of documents within the DB.
+
+What does that mean?
+A collection in MongoDB is like a table in a relational database.
+The documents inside of the collection are similar to a row in a relational database.
+In Relational DB's we have Tables and Rows, in MongoDB we have collections and documents.
+
+Each document is a collection of key/value pairs.
+
+In mongoose there is a concept called Schema, this is specific to mongoose. It's not part of MongoDB.
+We use the schema in mongoose to define the shape of documents in a MongoDB collection.
+
+*** How to create a schema ***
+lets define a constant called courseSchema, it defines the shape of course documents in the mongoDB database.
+its a new instance of a mongoose schema class, within it we pass an object.
+Inside the object we specify the key/value pairs we should have for course documents.
+
+	const courseSchema = new mongoose.Schema(
+	
+Types of properties we can use for keys in a schema are:
+String, Number, Date, Buffer (used for storing binary data), Boolean, ObjectID (used for assigning unique identifiers), and Array
+
+Example:
+	const courseSchema = new mongoose.Schema({
+		name: String,
+		author: String,
+		tags: [ String ],
+		date: { type: Date, default: Date.now }, //In this case, Date is an object of the date type and has a default value of the current date if not specified
+		isPublished: Boolean
+	})
+
+
+****************
+**** Models ****
+****************
+So I've defined my courseSchema in the previous lesson. Now I need to compile it into a model.
+
+What is a Model?
+
+Earlier I went over the concept of classes and Objects.
+IE: class called Human and object called John. Class is the blueprint and an object is an instance of the blueprint.
+
+In this app I want a class called Course and then create instances like nodeCourse and save that nodeCourse to the DB.
+To create a class like Course, I need to compile the schema into a model.
+
+How to do this:
+The mongoose object has a method called model that takes 2 arguments. 
+Argument #1 - The singular name of the collection that the model is for. IE: "Course"
+Argument #2 - The schema that defines the shape of documents in the collection. IE: courseSchema.
+
+IE: 	mongoose.model('Course', courseSchema)
+This returns a "Course" class that I save to a variable. NOTE, it's a class, NOT an object.
+NOTE: This is a Class, so use Pascall naming convention.
+
+Now, I can create an object based on this class.
+	const course = new Course({ })
+Now I can pass an object into it to define the properties and initialize the course object.
+
+	const course = new Course({
+		name: 'Node.js Course',
+		author: "Larry",
+		tags: ["node", "backend"],
+
+** NOTE: The tags field is interesting because it is a complex structure, its an entry in itself which is an array. 
+	If I wanted to model this structure in a relational database I'd need 3 different tables: Courses, Tags, and an intermediary table called 
+	"Course-tags" because we have a many-to-many relationship between courses and tags.
+
+	The next property is "Date" but earlier it was defined to have a default value.
+	So, I won't set it when creating the new course object.
+	Last property is the "isPublished" bool which I'll set to true.
+	
+	RECAP: 
+		Once we have a schema we need to compile that into a model which allows us to create an object based on that class and that object maps to a document in a SQL-less (Mongo) database.
