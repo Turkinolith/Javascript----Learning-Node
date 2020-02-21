@@ -1,0 +1,61 @@
+***************************
+**** Saving a Document ****
+***************************
+
+So I have a course object defined in memory now.
+to save it, there is a method attached to the object: [objectname].save();
+
+This is an async operation because it will take some time to save the course in the DB because it will access the file system.
+So, this method returns a promise.
+It can be awaited and get a result. The result is the actual course object saved in the database.
+So when its saved in MongoDB the DB will assign a unique identifier, with the result we can see what that ID is.
+
+	const result = await course.save();
+	console.log(result);
+
+As noted before, we can't await a function call alone, it has to be itself wrapped within a function decorated with "async"
+
+async function createCourse() {
+  //* Generates an object from the Course class
+  const course = new Course({
+    name: "Node.js Course",
+    author: "Larry",
+    tags: ["node", "backend"],
+    isPublished: true
+  });
+
+  const result = await course.save();
+  console.log(result);
+}
+
+Now, I run the function
+	createCourse();
+
+And I get this as the result:
+	connected to MongoDB...
+	{
+	  tags: [ 'node', 'backend' ],   
+	  _id: 5e502132644d193740d3fd35, 
+	  name: 'Node.js Course',        
+	  author: 'Larry',
+	  isPublished: true,
+	  date: 2020-02-21T18:28:02.600Z,
+	  __v: 0
+	}
+
+
+In MongoDB Compass I can see that the Database was created as defined in mongoose.connect("mongodb://localhost/playground")
+The courses collection in that DB was created as defined in mongoose.model("Course",... The name is pluralized and lowercased. 
+	I can override this by adding a 3rd parameter to the .model that has a string saying exactly what I want for the collection name. IE: mongoose.model("Course", courseSchema, "Course") // This will make the collection named "Course" instead of "courses"
+Unlike in a relational database I didn't have to create a table, didn't have to scrape the table, I simply created a document and stored it in the database.
+
+Now I'll modify the values to prep for the next lesson and make a new document.
+{
+  tags: [ 'angular', 'frontend' ],
+  _id: 5e5032e0fda45c2d8c6aa6ba,
+  name: 'Angular Course',
+  author: 'Larry',
+  isPublished: true,
+  date: 2020-02-21T19:43:28.819Z,
+  __v: 0
+}
