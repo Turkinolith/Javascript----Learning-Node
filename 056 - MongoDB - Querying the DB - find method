@@ -1,0 +1,51 @@
+********************************
+**** How to Query Documents ****
+********************************
+How to retrieve documents from a MongoDB database
+I'll make a new function:
+
+	async function getCourses() {
+	}
+	
+	getCourses();
+	
+The Course class created by mongoose.model() has several methods on it for querying documents.
+	.find - to get a list of documents.
+	.findById - which is pretty self explanatory.
+	.findOne - which returns a single document.
+There are a few others, but their used for finding and removing or updating the document.
+
+**** .find ****
+this method returns a DocumentQuery object. 
+This object is kind of like a promise, it has the .then method, so we can await it and get the result.
+
+
+Let's use it in the new function.
+	async function getCourses() {
+	const courses = await Course.find();
+	console.log(courses);
+	}
+	
+	getCourses();
+
+This returns an array with 2 objects:
+	[
+	  {
+		tags: [ 'node', 'backend' ],
+		_id: 5e502132644d193740d3fd35,
+		name: 'Node.js Course',
+		author: 'Larry',
+		isPublished: true,
+		date: 2020-02-21T18:28:02.600Z,
+		__v: 0
+	  },
+	  {
+		tags: [ 'angular', 'frontend' ],
+		_id: 5e5032e0fda45c2d8c6aa6ba,
+		name: 'Angular Course',
+		author: 'Larry',
+		isPublished: true,
+		date: 2020-02-21T19:43:28.819Z,
+		__v: 0
+	  }
+	]
