@@ -1,0 +1,74 @@
+************************************
+**** Comparison Query Operators ****
+************************************
+How to make more complex queries for use with the find method.
+
+Syntax used to build queries can be strange, but here is a technique to remember it:
+
+In mongodb there are a bunch of operators for comparing values.
+Since mongoose is built on top of the mongodb driver those operators are also available there.
+The comparison operators are:
+	eq = equal
+	ne = not equal
+	gt = greater than
+	gte = greater than or equal to
+	lt = less than
+	lte = less than or equal to
+	in
+	nin = not in
+
+
+Lets assume that our courses stored on the DB has a property called "price"
+I want to search for all of the courses that are $10.
+
+	const courses = await Course
+	  .find({ price: 10 })
+
+This returns only the courses that are $10
+
+What if I want courses that cost $10 and up? How to express this using JSON objects in JS? 
+In JS an object is a collection of key/value pairs. So here the key is price and the value is 10.
+With this simple value we can't express the concept of MORE or GREATER THAN 10. I need to pass an object here which is again a container for key/value pairs.
+
+	.find({ price: { } })
+
+Here I can use one of the afore mentioned values as a key. They are indicated by a leading dollar sign.
+
+	.find({ price: { $gt: 10 } })
+
+This returns the courses that are GREATER THAN $10
+
+So, I replace the value with an object to express a concept of greater than a value.
+Now, to get all the results that are $10 or greater:
+
+	.find({ price: { $gte: 10} })
+
+
+
+*** Lets take this to the next level ***
+What if I want to get courses that are between $10 and $20?
+
+I can use another operator. 
+
+	.find({ price: { $gte: 10, $lte: 20 } })
+
+This is how I can use comparison operators to query documents.
+
+
+*** How to use the "in" operator ***
+Lets imagine I want to get courses that are: $10 or $15 or $20
+
+Lets set up the basis of the search, Looking at the price parameter:
+	.find({ price: 
+
+Now, I can't use a hard 10, because that is a flat equality check, I don't want that, I want Value A OR Value B OR Value C.
+So, replace the value with an object to express the query and I will use an operator, the "in" in this case.
+
+	.find({ price: { $in: 
+
+So, what goes next? I want to express a query with the value is one of 3 options. what JS construct do we use to express multiple values?
+An array.
+
+	.find({ price: { $in: [10, 15, 20] } })
+
+
