@@ -1,0 +1,43 @@
+*********************************
+**** Filtering .find results ****
+*********************************
+
+
+I can also pass a filter in the function by adding it as an argument to the .find method.
+Inside the filter method I pass an object and in that object define the key/value pairs that I want to filter for.
+
+	async function getCourses() {
+	  const courses = await Course.find({ author: "Larry", isPublished: true });
+	  console.log(courses);
+	}
+
+With this filter, I'll only get the published courses by "Larry"
+Here I can also sort documents, set a limit on number returned, also select specific properties in the document like lets say the documents have 50+ properties so I only want to return the name of the documents and not all of the properties.
+
+
+*** How to build a more complex query ***
+As saw, the find method returns a documentQuery object
+Using dot notation you can add more filtering to it such as:
+
+	async function getCourses() {
+	  const courses = await Course.find({ author: "Larry", isPublished: true })
+	  .limit(10) // <-- Limit the number of returns
+	  .sort({ name: 1 }) // <-- sets the sort order if an object is passed, can be sorted asc or dec or that can be expressed as 1 and -1. If a string is passed instead of an object it must be a spaced list of path names  In this case its ascending order by name
+	  .select({ name: 1, tags: 1}) // <-- Select the properties that I want returned. Like only return the name and tags property.
+	  console.log(courses);
+	}
+
+This returns an array of result objects: each has the ID# for that file in the database, the name and tags parameter and their values.
+
+	[
+	  {
+		tags: [ 'angular', 'frontend' ],
+		_id: 5e5032e0fda45c2d8c6aa6ba,
+		name: 'Angular Course'
+	  },
+	  {
+		tags: [ 'node', 'backend' ],
+		_id: 5e502132644d193740d3fd35,
+		name: 'Node.js Course'
+	  }
+	]
