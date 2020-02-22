@@ -1,0 +1,61 @@
+***************************************
+**** Regular Expressions Refresher ****
+***************************************
+https://www.regexpal.com/
+
+This is a quick refresher about *BASIC* regex use. Consult my FreeCodeCamp notes on doing a deeper dive into Regex use.
+
+Back to the original Query:
+
+async function getCourses() {
+  const courses = await Course.find({ author: "Larry", isPublished: true })
+    .limit(10)
+    .sort({ name: 1 })
+    .select({ name: 1 });
+  console.log(courses);
+}
+
+getCourses();
+
+In this example we're getting courses whos author is exactly the string "Larry"
+If the author begins with "Larryboles" or is "Larry Boles" they will not be returned.
+If you want more control over filtering strings, I need to use a regex.
+
+
+Lets say I want to find courses who's author starts with "Larry"
+It sets up the same with the .find method, but instead of passing a string for the author name we pass a regular expression.
+First we add a forward slash, then a pattern for matching, then another forward slash.
+Example:
+	async function getCourses() {
+	  const courses = await Course
+		.find({ author: /pattern/ })
+		.limit(10)
+		.sort({ name: 1 })
+		.select({ name: 1 });
+	  console.log(courses);
+	}
+
+** Starts with **
+In regexes we can use the caret character to represent a string that starts with something.
+So, .find({ author: /^Larry/ }) represents a string that starts with Larry. As long as the author starts with "Larry" it doesn't matter what is after.
+
+** Ends with **
+To find something that ends with a given string, ie: Ends with "Boles"
+put a dollar sign at the end, the dollar sign means "end of a string"
+	.find({ author: /Boles$/ })
+
+** Case sensitive **
+Regexes are case sensitive. In the above example I will get "Boles" that ends a string, but I won't get "boles"
+To make them case in-sensitive append an "i" at the end after the closing forward slash.
+	.find({ author: /Boles$/i })
+
+** Contains **
+To find something that contains a given string, like "Larry", either at the beginning middle or end.
+Use the: dot-star
+This means it can have zero or more characters. By Specifying it on both sides of the string it can have zero or more characters in front or in back of the string.
+
+	.find({ author: /.*Larry.*/ })
+
+And like before, the above is case sensitive. if I want it to be case in-sensitive:
+
+	.find({ author: /.*Larry.*/i })
