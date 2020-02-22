@@ -1,0 +1,118 @@
+*******************************
+**** MongoDB - Exercise #1 ****
+*******************************
+Download the zipfile attached to the lecture.
+When the file is opened there will be 2 files.
+exercise-data.json - it has a bunch of course objects that will be imported into the database.
+the other file is exercise.txt this has a command that will be ran in terminal to import the file into a new database.
+	It needs to be ran inside the same folder that the json file is located.
+
+Breakdown on how the commands:
+mongoimport 		: used to import data into a mongdb database. This will need a few flags:
+--db				: Flag that specifies the name of the database is coming next
+mongo-exercises 	: Name of the database used with the above flag.
+--collection 		: Flag that specifies the name of the collection within the DB is coming next
+courses				: Name of the collection used with the above flag
+--drop				: Flag that modifies the import process so that the target instance drops the collection before importing the data from the input.
+--file 				: Flag that specifies the location and name of a file containing the data to import. If you do not specify a file, mongoimport reads data from standard input
+exercise-data.json	: Name of the file to be imported
+--jsonArray			: Flag that allows the import of multiple MongoDB documents within a single JSON array. (Limited to 16MB or smaller) Needed because the data in the file is represented
+						as an array of objects.
+
+
+Run the command to import the files into MongoDB and open up compass to verify 
+
+exercise-data.json
+///////////////////////////////////////
+[
+  {"_id":"5a68fdc3615eda645bc6bdec","tags":["express","backend"],"date":"2018-01-24T21:42:27.388Z","name":"Express.js Course","author":"Mosh","isPublished":true,"price":10,"__v":0},
+  {"_id":"5a68fdd7bee8ea64649c2777","tags":["node","backend"],"date":"2018-01-24T21:42:47.912Z","name":"Node.js Course","author":"Mosh","isPublished":true,"price":20,"__v":0},
+  {"_id":"5a68fde3f09ad7646ddec17e","tags":["aspnet","backend"],"date":"2018-01-24T21:42:59.605Z","name":"ASP.NET MVC Course","author":"Mosh","isPublished":true,"price":15,"__v":0},
+  {"_id":"5a68fdf95db93f6477053ddd","tags":["react","frontend"],"date":"2018-01-24T21:43:21.589Z","name":"React Course","author":"Mosh","isPublished":false,"__v":0},
+  {"_id":"5a68fe2142ae6a6482c4c9cb","tags":["node","backend"],"date":"2018-01-24T21:44:01.075Z","name":"Node.js Course by Jack","author":"Jack","isPublished":true,"price":12,"__v":0},
+  {"_id":"5a68ff090c553064a218a547","tags":["node","backend"],"date":"2018-01-24T21:47:53.128Z","name":"Node.js Course by Mary","author":"Mary","isPublished":false,"price":12,"__v":0},
+  {"_id":"5a6900fff467be65019a9001","tags":["angular","frontend"],"date":"2018-01-24T21:56:15.353Z","name":"Angular Course","author":"Mosh","isPublished":true,"price":15,"__v":0}
+]
+///////////////////////////////////////
+
+exercise.txt
+///////////////////////////////////////
+mongoimport --db mongo-exercises --collection courses --drop --file exercise-data.json --jsonArray
+//////////////////////////////////////
+
+
+
+
+
+********************
+**** Exercise:
+********************
+
+	Write a program that gets all of the published backend courses, sort them by name, pick only name and author, and display them.
+	
+My code:
+////////////////////////////////////////////////////////////
+
+const mongoose = require("mongoose");
+
+mongoose.set("useNewUrlParser", true);
+mongoose.set("useFindAndModify", false);
+mongoose.set("useCreateIndex", true);
+mongoose.set("useUnifiedTopology", true);
+//* the connect method returns a promise.
+//* This connection string is hardcoded, but in a real app it should be located in a cfg file.
+mongoose
+  .connect("mongodb://localhost/mongo-exercises")
+  .then(() => console.log("connected to MongoDB..."))
+  .catch(err => console.log("Could not connect to MongoDB...", err.message));
+
+const courseSchema = new mongoose.Schema({
+  name: String,
+  author: String,
+  tags: [String],
+  price: Number,
+  date: { type: Date, default: Date.now },
+  isPublished: Boolean
+});
+
+//* Generates the Course class
+const Course = mongoose.model("Course", courseSchema);
+
+
+async function getPublishedCourses() {
+  const courses = await Course.find({ isPublished: true, tags: "backend" })
+    .sort({ name: 1 })
+    .select({ name: 1, author: 1 });
+  console.log(courses);
+}
+
+getPublishedCourses();
+
+
+///////////////////////////////////////////////////////////
+My Result:
+///////////////////////////////////////////////////////////
+
+connected to MongoDB...
+[
+  {
+    _id: 5a68fde3f09ad7646ddec17e,
+    name: 'ASP.NET MVC Course',
+    author: 'Mosh'
+  },
+  {
+    _id: 5a68fdc3615eda645bc6bdec,
+    name: 'Express.js Course',
+    author: 'Mosh'
+  },
+  {
+    _id: 5a68fdd7bee8ea64649c2777,
+    name: 'Node.js Course',
+    author: 'Mosh'
+  },
+  {
+    _id: 5a68fe2142ae6a6482c4c9cb,
+    name: 'Node.js Course by Jack',
+    author: 'Jack'
+  }
+]
