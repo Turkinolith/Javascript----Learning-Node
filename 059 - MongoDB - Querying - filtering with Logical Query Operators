@@ -1,0 +1,51 @@
+*********************************
+**** Logical Query Operators ****
+*********************************
+Logical Operators:
+	or
+	and
+
+Here is the original query:
+
+	async function getCourses() {
+	  const courses = await Course.find({ author: "Larry", isPublished: true })
+		.limit(10)
+		.sort({ name: 1 })
+		.select({ name: 1 });
+	  console.log(courses);
+	}
+
+	getCourses();
+
+Getting all the courses that I'm the author of and are published. After the filtering I additionally add on a limit of 10 results, sorted by name in ascending order, and returning only the name property and unique ID.
+
+What if I want to return either: courses that I am the author of, OR courses that are published? So I can get courses that are published but are not authored by Larry. This is where I need the "or" operator.
+
+**** LOGICAL OR ****
+
+first I'll call the find method without any filters.
+	async function getCourses() {
+	  const courses = await Course
+	  .find()
+	  
+	  
+After that, I'll call the or() method. Here is a question, what JS construct do we use to store multiple values? An array.
+So I pass into it an array and within it I put filter objects, just like the ones I pass into the find method.
+	async function getCourses() {
+	  const courses = await Course
+	  .find()
+	  .or([ { author: "Larry" }, { isPublished: true} ])
+
+Now, I'll get courses that are authored by "Larry" OR courses that are published.
+
+The logical "and" method works exactly the same way.
+
+**** LOGICAL AND ****
+Technically, this is similar to passing a filter object to the .find method, but sometimes in more complex queries there may be a place for using this.
+
+	async function getCourses() {
+	  const courses = await Course
+	  .find()
+	  .and([ { author: "Larry" }, { isPublished: true} ])
+
+This will result in getting back all courses that "Larry" is the author of AND have isPublished set to True.
