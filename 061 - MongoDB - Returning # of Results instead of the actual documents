@@ -1,0 +1,28 @@
+****************************
+**** MongoDB - Counting ****
+****************************
+In this query, I'm filtering the courses and picking only their name properties.
+
+	async function getCourses() {
+	  const courses = await Course
+		.find({ author: /pattern/ })
+		.limit(10)
+		.sort({ name: 1 })
+		.select({ name: 1 });
+	  console.log(courses);
+	}
+
+Sometimes, I just want to get the # of documents instead of the actual documents.
+If that is the case, I don't need to use the .select method.
+Instead, call the .count method. It returns the count of documents that match the above criteria.
+
+	async function getCourses() {
+	  const courses = await Course
+		.find({ author: /pattern/ })
+		.limit(10)
+		.sort({ name: 1 })
+		.count();
+	  console.log(courses);
+	}
+
+// Returns: 2
