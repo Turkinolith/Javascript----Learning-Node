@@ -1,0 +1,117 @@
+*******************************************
+**** Updating A Document - Query First ****
+*******************************************
+How to update documents in a MongoDB Database
+Lets make a basic function for this.
+
+	async function updateCourse(id) {
+
+	}
+
+	updateCourse();
+
+
+There are 2 ways to update a document in MongoDB:
+
+#1  Query First
+	1 - Find a document using findById()
+	2 - Modify its properties
+	3 - save()
+	
+#2  Update First
+	1 - Update directly
+	Optionally: get updated document
+
+Lets go into #1:
+
+	async function updateCourse(id) {
+	  const course = await Course.findById(id);
+	  if (!course) return;  //If the course doesn't exist, return immediately
+	  
+	  //Update data Method #1
+	  course.isPublished = true;
+	  course.author = 'Another Author';
+	  
+	  //Update data Method #2
+	  course.set({
+		isPublished: true,
+		author: 'Another Author'
+	  });
+	}
+
+	updateCourse();
+	
+Whichever method I want to use for updating data is to my choice, they both do the same thing. 
+In the case of this example, I'll use #1
+
+	async function updateCourse(id) {
+	  const course = await Course.findById(id);
+	  if (!course) return;  //If the course doesn't exist, return immediately
+	  
+	  //Update data Method #1
+	  course.isPublished = true;
+	  course.author = 'Another Author';
+	  
+	  const result = await course.save();
+	  console.log(result);
+	}
+
+	updateCourse();
+	
+
+
+/////////////////////////////////////////
+I actually ended up using all of these to get this to work:
+
+
+async function updateCourse(id) {
+  console.log("attempting to search for: ", id);
+  const course = await Course.findById(id);
+  if (!course) return console.log("Course Not Found"); //If the course doesn't exist, return immediately
+
+  //Update data Method #1
+  course.isPublished = true;
+  course.author = "Larry Pulling out Hair";
+
+  const result = await course.save();
+  console.log(result);
+}
+
+//updateCourse("5a68fdf95db93f6477053ddd");
+
+async function checkCourse(id) {
+  console.log("attempting to search for:", id);
+  const course = await Course.findById(id);
+  //if (!course) return console.log("Course Not Found");
+  console.log(course);
+}
+
+async function checkCourses() {
+  const courses = await Course.find();
+  if (!courses) return console.log("Course Not Found");
+  console.log(courses);
+}
+
+//////////////////////////////////////////////
+
+What happened?
+
+Well, when importing the values for the database it appears the _id's were imported as a string rather than an Object ID.
+In Compass this is very apparent as the "string" values that are not true ID's were showing up as blue
+The objectID _id's say "ObjectID("########") and show up as Orange.
+
+the findByID(id) values are looking for the ObjectID type, NOT the string.
+So, I had to go in and copy one of the courses to fix this.
+
+ANOTHER way around this is to make the schema look for a STRING instead of the Object ID:
+const courseSchema = new mongoose.Schema({
+  name: String,
+  author: String,
+  tags: [String],
+  price: Number,
+  date: { type: Date, default: Date.now },
+  isPublished: Boolean,
+  _id: String
+});
+
+Now I can overwrite one of the already existing ones.
