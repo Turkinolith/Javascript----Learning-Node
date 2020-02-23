@@ -1,0 +1,113 @@
+*****************************
+**** Built-in Validators ****
+*****************************
+
+Earlier I learned about the "required" validator. Its one of the built-in validators for mongoose.
+The required property can be set to a bool or to a function that returns a bool. This is useful when I want to conditionally make a property required or not.
+
+const courseSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  author: String,
+  tags: [String],
+  date: { type: Date, default: Date.now },
+  isPublished: Boolean,
+  price: Number
+});
+
+
+*** Conditional Requirements Example ***
+
+Lets imagine that in the above example that "price" is only required when "isPublished" is set to true.
+So, lets add the required validator on "Price"
+
+First, replace number with an object.
+	price: {
+	type: Number
+	}
+	
+Now, lets add required, but replace the value with a function.
+	price: {
+		type: Number,
+		required: function() { }
+	}
+
+And in that function, return a boolean.
+		price: {
+		type: Number,
+		required: function() { return this.isPublished; } //this is referencing the course object in this case. 
+	}
+
+So, if the object has isPublished === true, then the Price property is required.
+In this particular case I can not replace the function declaration with an arrow function. Arrow functions don't have their own "this." "this" in an arrow function is used in the enclosing execution context.
+In this case there is a function somewhere in mongoose that is going to call this function, the reference there if it is set up as an arrow function will call "this" on the calling function, NOT as "this" being understood as part of the course object.
+
+If I run this:
+	//* This creates a new course
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry",
+		isPublished: true
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		console.log(ex.message);
+	  }
+	}
+	
+I get this:
+	Course validation failed: price: Path `price` is required., name: Path `name` is required.
+
+
+** Required **
+So, this is the required validator: it can be either a boolean or it can be a function to conditionally make a property required.
+
+Depending on the type of property, we have additional built-in validators.
+
+** Numbers **
+Numbers also have "min" for a minimum value and "max" for a maximum value.
+
+** Dates **
+"min" and "max" also work for date values.
+
+** Strings **
+Strings also have "minlength", "maxlength", and "match". Match can pass a regular expression.
+Example:
+	name: {
+		type: String,
+		required: true,
+		minlength: 5,
+		maxlength: 255,
+		//match: /pattern/  //In this case, it doesn't make any sense to apply a match onto the name of a course so I'll comment this out.
+	},
+
+Another useful property for strings is "enum"
+To use it, you create an array of valid strings.
+	category: {
+	  type: String,
+	  enum: ['web', 'mobile', 'network']
+	  
+So when creating a course, the category property needs to be one of these 3 values, else we will get a validation error. So, lets make it required:
+  category: {
+    type: String,
+    required: true,
+    enum: ["web", "mobile", "network"]
+  },
+
+Now if I try to create a new entry without a valid category:
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry",
+		category: "-"
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		console.log(ex.message);
+	  }
+	}
+	
+Returns:
+	Course validation failed: name: Path `name` is required., category: `-` is not a valid enum value for path `category`.
