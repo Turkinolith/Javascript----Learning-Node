@@ -1,0 +1,37 @@
+****************************
+**** Removing Documents ****
+****************************
+*** deleteOne() Method ***
+This method takes a filter or query object.
+		{ _id: id }
+We can find a document with a given ID, if we use something more generic like { isPublished: false }, there could be many courses that are not published, this method will only
+get the FIRST one and delete that.
+	
+Similar to update, this method returns a promise. We can await it and save the result.
+
+	async function removeCourse(id) {
+	  const result = await Course.deleteOne({ _id: id });
+	  console.log(result);
+	}
+	removeCourse("5e52afb9c614bc2d4c86909d");
+	// Returns: { n: 1, ok: 1, deletedCount: 1 }
+
+*** deleteMany() Method ***
+If I want to delete more than one entry. It also returns a results object that shows the number of documents that have been deleted.
+
+
+	async function removeCourse(id) {
+	  const result = await Course.deleteMany({ _id: id });
+	  console.log(result);
+	}
+	removeCourse("5e52afb9c614bc2d4c86909d");
+
+
+*** findByIdAndRemove Method ***
+If I want to delete an entry and return the course that I deleted, if the ID can't be found, then it returns null.
+
+	async function removeCourse(id) {
+	  const course = await Course.findByIdAndRemove(id);
+	  console.log(course);
+	}
+	removeCourse("5e52afb9c614bc2d4c86909d");
