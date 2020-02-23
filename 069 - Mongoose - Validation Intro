@@ -1,0 +1,135 @@
+********************************
+**** Validation in Mongoose ****
+********************************
+
+Here is the courseSchema I defined earlier:
+
+const courseSchema = new mongoose.Schema({
+  name: String,
+  author: String,
+  tags: [String],
+  price: Number,
+  date: { type: Date, default: Date.now },
+  isPublished: Boolean
+});
+
+By default, all of the properties defined here, such as name, author, isPublished, etc. are optional.
+
+So, if I create a course and leave out all of the properties that would be a perfectly valid operation.
+MongoDB doesn't care that I have a course that doesn't have a name or a price.
+
+So, in this section I'll go over how to implement validation.
+
+/////////////////////////////////////////////////////
+Required Validator
+/////////////////////////////////////////////////////
+Lets make the "name" field required in the schema.
+First, replace the String value with an object. Within it set the key type to String, and the key required to true.
+
+	const courseSchema = new mongoose.Schema({
+		name: { type: String, required: true},
+
+With this if I create a course without a name at the time I try to save the course to the database I'll get an exception.
+
+Example:
+		//Create the Demo Schema
+		const courseSchema = new mongoose.Schema({
+		name: { type: String, required: true}});
+		
+		//Define the class
+		const Course = mongoose.model("Course", courseSchema);
+		
+		//Create a new entry *WITHOUT* the required parameter.
+		async function createCourse() {
+		  const course = new Course({
+			author: "Larry"
+		  });
+		  const result = await course.save();
+		  console.log(result);
+		}
+				
+
+**UnhandledPromiseRejectionWarning**
+In trying to do this I obtain this error. This means that I have a promise which is rejected, but I have not handled that with a catch.
+
+	  const result = await course.save();
+		console.log(result);
+The save method here returns a promise and I'm awaiting it to be returned to display it. Here it's only assuming the success scenario.
+If the promise is rejected there is no try/catch block to handle that. Let's refactor this now.
+
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry"
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		console.log(ex.message);
+	  }
+	}
+
+// Returns: Course validation failed: name: Path `name` is required.
+
+
+So, if you have an invalid object mongoose doesn't allow us to save it to the DB, validation kicks in at the time we try to save to the DB.
+We can also manually trigger validation. The course object has a validate method.
+
+	try {
+		await course.validate();
+		} catch (ex) {
+			console.log(ex.message);
+		}
+	
+	*NOTE: This validate method returns a promise of "void", so I can await it and if the course is invalid I'll get an exception and I'll end up in its accompanying catch block.
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+One thing the instructor doesn't like about Mongoose is that the validate method returns a promise of void. 
+So we don't have any sort of result. Ideally it should return a bool so we could do something like... But we can't, this is a design flaw of Mongoose.
+				try {
+					const isValid = await course.validate();
+					if (!isValid) { }
+					} catch (ex) {
+						console.log(ex.message);
+					}
+
+The only option to get this kind of bool is to pass a callback, so instead of using a promise you go back to the callback based approach.
+	try {
+	  course.validate((err) => {
+	    if (err) { }
+	  });
+	} catch (ex) {
+	  console.log(ex.message);
+	}
+
+You might ask: we already have the catch block, so if we have validation errors we can execute that kind of logic there, this is true but writing code like this is messy.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+That aside one more thing to note:
+
+The validation that is implemented here:
+			const courseSchema = new mongoose.Schema({
+			name: { type: String, required: true}});
+
+Is only meaningful in mongoose.
+MongoDB doesn't care about the name property. So if I've worked with Database servers like SQL-server or MySQL I know that in those DB's I can 
+define validation at the database level. 
+For example in the courses table on a SQL server I can have name column and mark it as required. That way I can not store an entry without a name in the DB.
+
+In MongoDB we don't have this. It doesn't care about validation. So this validation is only meaningful in mongoose.
+When I try to save a course mongoose tries to run the validation logic and if its not valid it won't push it to the DB.
+
+
+** 2 Factor Validation **
+Earlier in the course I went over the package: hapi-joi
+It's also used for validation. So the question comes up: which do I use for validation?
+BOTH
+
+These kind of validations complement each other. 
+
+I use Joi in restful API's as the first attack, to make sure the data the client is sending is valid data.
+But I also need this same validation on mongoose to make sure that the data saved to the DB is in the right shape.
+
+It is possible for the client to send a valid course in the body of their request but when I create a course object in the HTTP service that I may forget to set the 
+name property to req.body.name or whatever its stored as.
+By enforcing validation I can ensure that programming errors wont be allowed to be persisted in the database.
