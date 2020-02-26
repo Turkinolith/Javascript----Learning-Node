@@ -1,0 +1,107 @@
+****************************
+**** SchemaType Options ****
+****************************
+** Note, this is on the schema, not the query objects **
+
+When defining a mongoose Schema, I've learned that I can set the type of property -
+
+Directly:
+	author: String
+	
+With a Schema object:
+	  category: {
+		type: String,
+		required: true,
+		enum: ["web", "mobile", "network"]
+	  }
+
+The object has a few properties that I've learned about:
+	type
+	required
+	enum
+
+I'll go over a few more useful properties available on Schema objects.
+
+
+*** FOR STRINGS ***
+lowercase: true/false(bool) (auto calls .toLowerCase() on the value)
+uppercase: bool (auto calls .toUpperCase() on the value)
+trim: bool (auto calls .trim() on the value) (If there is whitespace around the string value it will remove it.)
+match: /pattern/ (uses regex to check if the value matches an expression.)
+enum: [] (check if the value is in the given array)
+minlength: number (check if the value length is not less than the given number)
+maxlength: number (check if the value length is not greater than the given number)
+
+
+
+*** ALL Schema Types - Can be used on any property irrespective of its type ***
+
+get: function, defines a custom getter for the property
+set: function, defines a custom setter for the property
+
+Example:
+	Lets say we always want to round the value of a price property.
+		  price: {
+			type: Number,
+			required: function() {
+			  return this.isPublished;
+			},
+			min: 10,
+			max: 200,
+			get: v => Math.round(v),
+			set: v => Math.round(v)
+		  }
+
+To do that I use a custom getter to get the value and I also use a custom setter to set the value.
+
+So, whenever I set the price property the set function will be called and the value will be rounded.
+Similarly, if I have a course that was created before I started rounding values and it was something like 15.8 and I read the course
+ and access the price property, the getter will be invoked and it'll also round the value.
+
+Note, that if I get  the result objects directly, I'll still see the DB saved value.
+BUT, if I call the price value of the results, I'll get the schema rounded version.
+	
+	Example:
+I'll use the price schema listed in the example above and get the following values from the database with this function:
+	
+	async function getCourses() {
+	  return await Course.find({ author: /Larry/i })
+		.sort({ name: 1 })
+		.select({ name: 1, tags: 1, price: 1 });
+	}
+	
+Then when I call the function I use this format:
+	
+	const log = getPagedCourses();
+	log.then(result => {
+	  console.log(result);
+	  result.forEach(element => console.log(element.price));
+	});
+	
+The results are:
+
+	[
+	  { tags: [], _id: 5e52d55caedb6e6610ef97cd, name: 'Learning Web Dev' },
+	  {
+		tags: [ 'test', 'alpha' ],
+		_id: 5e56acfd1ef4070a5ca59cab,
+		price: 15.4,
+		name: 'Tester series'
+	  },
+	  {
+		tags: [ 'test', 'alpha' ],
+		_id: 5e56ae4c122f060080610b8f,
+		price: 15.8,
+		name: 'Tester series 2'
+	  }
+	]
+	NaN
+	15
+	16
+
+The first result doesn't even have a "price" value, so its object doesn't have it and the result of looking for the element.price on it returns NaN
+BUT, entries 1 and 2 on the index are more interesting.
+Returning the objects whole shows the price on #1 is 15.4 and on #2 price is 15.8
+But, when I view element.price it returns 15 and 16 respectively because of the schema getter rounding the value.
+
+So, get: is called when I read the value of price directly, but NOT when I retrieve the object as a whole.
