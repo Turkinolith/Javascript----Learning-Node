@@ -1,0 +1,73 @@
+***************************
+**** Custom Validators ****
+***************************
+
+Sometimes the built-in validators in mongoose don't give the kind of validation I need.
+
+Example:
+	tags: [ String ]
+	
+The tags property here is a string array., what if I want to enforce that every db entry has at least 1 tag?
+I can't simply add "required" here, because I could pass an empty array and that would be perfectly valid from mongooses point of view.
+Here I need a custom validator.
+
+#1 - Replace the value with an object. 
+	tags: { }
+
+#2 - Set the type of value it will be, in this case an array.
+	tags: {
+	  type: Array,
+	  }
+
+#3 - Now, define a custom validator. First add the validate property and set it to an object. 
+	tags: {
+	  type: Array,
+	  validate: { }
+	}
+
+#4 - in this object there is a property called validator which is set to a function. 
+	  It takes an argument (v) which is short for "value"
+	  Here I can implement my custom validation logic.
+	  
+	tags: {
+	  type: Array,
+	  validate: { function (v) {
+	  
+	  }
+	 }
+	}
+
+#5 - Now I can do a test like: if v.length (being the array) is greater than zero, then it is valid.
+
+	tags: {
+	  type: Array,
+	  validate: { function (v) {
+	    return v.length > 0;
+	  }
+	 }
+	}
+
+#6 - I can also set a custom message here. It has another property: message:
+	
+	tags: {
+	  type: Array,
+	  validate: { function (v) {
+	    return v.length > 0;
+	  },
+	  message: "A course should have at least one tag."
+	 }
+	}
+
+#7 - This works, except for in the case that I pass a value of "null", in that case I get "Cannot get property length of null"
+	So, I need to modify the validation logic to clean this up.
+	I'll do this by changing "return v.length > 0;" to "return v && v.length > 0" 
+	or: if v has a value and v.length is greater than zero.
+	
+	tags: {
+	  type: Array,
+	  validate: { function (v) {
+	    return v && v.length > 0;
+	  },
+	  message: "A course should have at least one tag."
+	 }
+	}
