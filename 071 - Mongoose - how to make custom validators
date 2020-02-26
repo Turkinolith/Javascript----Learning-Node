@@ -31,7 +31,8 @@ Here I need a custom validator.
 	  
 	tags: {
 	  type: Array,
-	  validate: { function (v) {
+	  validate: { 
+	    validator: function (v) {
 	  
 	  }
 	 }
@@ -41,7 +42,8 @@ Here I need a custom validator.
 
 	tags: {
 	  type: Array,
-	  validate: { function (v) {
+	  validate: { 
+	    validator: function (v) {
 	    return v.length > 0;
 	  }
 	 }
@@ -51,7 +53,8 @@ Here I need a custom validator.
 	
 	tags: {
 	  type: Array,
-	  validate: { function (v) {
+	  validate: { 
+	    validator: function (v) {
 	    return v.length > 0;
 	  },
 	  message: "A course should have at least one tag."
@@ -63,11 +66,12 @@ Here I need a custom validator.
 	I'll do this by changing "return v.length > 0;" to "return v && v.length > 0" 
 	or: if v has a value and v.length is greater than zero.
 	
-	tags: {
-	  type: Array,
-	  validate: { function (v) {
-	    return v && v.length > 0;
-	  },
-	  message: "A course should have at least one tag."
-	 }
-	}
+  tags: {
+    type: Array,
+    validate: {
+      validator: function(v) {
+        return v && v.length > 0;
+      },
+      message: "A course should have at least one tag."
+    }
+  },
