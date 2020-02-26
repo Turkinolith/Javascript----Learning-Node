@@ -1,0 +1,190 @@
+***************************
+**** Validation Errors ****
+***************************
+So far in this save course function, I only display a message about a validation error:
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry",
+		category: "-",
+		tags: null,
+		isPublished: true,
+		price: 15
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		console.log(ex.message);
+	  }
+	}
+
+In this session I'll examine the error object in more detail.
+
+*** The Mongoose Validation Error Object ***
+The exception that I get has a property called: ex.errors
+
+In this object there is a separate property for each invalid property in the course object.
+
+````````````````````````````````````````````````````````````````````````````````
+Example, here is the structure I've defined for a course object that will attempt to be created:
+		  const course = new Course({
+			author: "Larry",
+			category: "-",
+			tags: null,
+			isPublished: true,
+			price: 15
+		  });
+
+	I already know that the category and tags properties are both invalid.
+	With this, the error object that I'll get back from this will have 2 properties within the errors property.
+		ex.errors.tags
+		ex.errors.category
+	
+	So, I can iterate over the properties in the error object and get more details about each validation error.
+	
+*** How to iterate over properties of the error object ***
+
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry",
+		category: "-",
+		tags: null,
+		isPublished: true,
+		price: 15
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		for (field in ex.errors)
+			console.log(ex.errors[field]);
+	  }
+	}
+
+
+When I run this I get a giant block of text, I'll break each part out block by block:
+
+#1 - This is the start of the error. First we have the message then the stack trace.
+		Notice at the end it has the opening of a curly braces. This is the opening of the error object for the first error.
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+MongooseError [ValidatorError]: `-` is not a valid enum value for path `category`.
+    at new ValidatorError (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\error\validator.js:29:11)
+    at validate (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1096:13)
+    at D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1150:11
+    at Array.forEach (<anonymous>)
+    at SchemaString.SchemaType.doValidate (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1105:14)
+    at D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\document.js:2359:9
+    at processTicksAndRejections (internal/process/task_queues.js:76:11) {
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - This is all of the key/value pairs of the first error object. Lets go into the key ones in more detail below
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+  message: '`-` is not a valid enum value for path `category`.',
+  name: 'ValidatorError',
+  properties: {
+    validator: [Function],
+    message: '`-` is not a valid enum value for path `category`.',
+    type: 'enum',
+    enumValues: [ 'web', 'mobile', 'network' ],
+    path: 'category',
+    value: '-'
+  },
+  kind: 'enum',
+  path: 'category',
+  value: '-',
+  reason: undefined,
+  [Symbol(mongoose:validatorError)]: true
+}
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - A : This is the message that I've already seen before.
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+message: '`-` is not a valid enum value for path `category`.',
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - B: This gives me the information about the validation requirements for the property.
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+properties: {
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - C: Within Properties I have access to the validator function
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+validator: [Function],
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - D: I can see the type for the property in the validator function.
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+    type: 'enum',
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - E: I can see the valid enum values defined in it
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+    enumValues: [ 'web', 'mobile', 'network' ],
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - F: Path determines the name of the property, in this case 'category'
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+  path: 'category',
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - G: Value is the current value that I tried to set
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+  value: '-',
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+#2 - H: The next few fields [kind, path, value] are shortcuts for properties.kind, properties.path, etc.
+
+
+
+#3 - This was the first validation error object, Since in my test I had 2, I have another error below this one that I'll just paste in 
+the values here in a block.
+
+MongooseError [ValidatorError]: A course should have at least one tag.
+    at new ValidatorError (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\error\validator.js:29:11)
+    at validate (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1096:13)
+    at D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1150:11
+    at Array.forEach (<anonymous>)
+    at SchemaArray.SchemaType.doValidate (D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\schematype.js:1105:14)
+    at D:\Node_tutorial\mongo-demo\node_modules\mongoose\lib\document.js:2359:9
+    at processTicksAndRejections (internal/process/task_queues.js:76:11) {
+  message: 'A course should have at least one tag.',
+  name: 'ValidatorError',
+  properties: {
+    validator: [Function: validator],
+    message: 'A course should have at least one tag.',
+    type: 'user defined',
+    path: 'tags',
+    value: null
+  },
+  kind: 'user defined',
+  path: 'tags',
+  value: null,
+  reason: undefined,
+  [Symbol(mongoose:validatorError)]: true
+}
+
+#3 - A: Of note here is the kind: "user defined" because I used a custom validator.
+
+
+#4 - If I want to get the validation error message for each invalid property, console.log(ex.errors[field].message)
+
+	async function createCourse() {
+	  const course = new Course({
+		author: "Larry",
+		category: "-",
+		tags: null,
+		isPublished: false,
+		price: 15,
+		name: "Tester series 3"
+	  });
+	  try {
+		const result = await course.save();
+		console.log(result);
+	  } catch (ex) {
+		for (field in ex.errors) console.log(ex.errors[field].message);
+	  }
+	}
+
+Response is:
+`-` is not a valid enum value for path `category`.
+A course should have at least one tag.
