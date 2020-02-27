@@ -1,0 +1,198 @@
+genres.js
+```````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+const express = require("express");
+const router = express.Router();
+const Joi = require("@hapi/joi");
+const mongoose = require("mongoose");
+
+mongoose.set("useNewUrlParser", true);
+mongoose.set("useFindAndModify", false);
+mongoose.set("useCreateIndex", true);
+mongoose.set("useUnifiedTopology", true);
+
+//* This connection string is hardcoded, but in a real app it should be located in a cfg file.
+mongoose
+  .connect("mongodb://localhost/vidly")
+  .then(() => console.log("connected to MongoDB..."))
+  .catch(err => console.log("Could not connect to MongoDB...", err.message));
+
+const genresSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true, unique: true }
+});
+
+const Genres = mongoose.model("Genre", genresSchema);
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* DB FUNCTION: Mongoose for validating the submitted genre
+
+async function createGenre(name) {
+  const genre = new Genres({
+    name: name
+  });
+  try {
+    const result = await genre.save();
+    return result;
+  } catch (ex) {
+    if (ex.code) {
+      return Promise.reject(new Error("Error: Duplicate genre"));
+    }
+    for (field in ex.errors) console.log(ex.errors[field].message);
+  }
+}
+
+//* HTTP FUNCTION: Router for dealing with the create HTTP request and response.
+
+router.post("/", (req, res) => {
+  const { error } = validateGenre(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  createGenre(req.body.name)
+    .then(response => res.send(response))
+    .catch(err => {
+      res.status(500).send(err.message);
+    });
+});
+
+////////////////////
+//! C-[R]-UD
+////////////////////
+
+//! *** Returns all genres ***
+//* DB FUNCTION: Mongoose for validating the submitted genre
+async function getGenres() {
+  const genres = await Genres.find();
+  if (!genres) return console.log("Something broke trying to get all genres");
+  return genres;
+}
+
+//* HTTP FUNCTION: Router for dealing with the read HTTP request and response.
+router.get("/", (req, res) => {
+  getGenres()
+    .then(response => res.send(response))
+    .catch(err => res.status(500).send("Error getting genre list"));
+});
+
+//! Returns a specific genre
+//* DB FUNCTION: Mongoose for validating the submitted genre
+async function getGenre(id) {
+  return await Genres.findById(id);
+}
+
+//* HTTP FUNCTION: Router for dealing with the read HTTP request and response.
+router.get("/:_id", (req, res) => {
+  getGenre(req.params._id)
+    .then(response => res.send(response))
+    .catch(err => res.status(404).send("Genre not found"));
+});
+
+////////////////////
+//! CR-[U]-D
+////////////////////
+//! Updates a specific genre and returns the updated value
+//* DB FUNCTION: Mongoose for validating the submitted genre
+async function updateAndReturnGenre(id, name) {
+  const genre = await Genres.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        name: name
+      }
+    },
+    { new: true }
+  );
+  return genre;
+}
+
+//* HTTP FUNCTION: Router for dealing with the read HTTP request and response.
+router.put("/:_id", (req, res) => {
+  const { error } = validateGenre(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  updateAndReturnGenre(req.params._id, req.body.name)
+    .then(response => res.send(response))
+    .catch(err => {
+      res.status(404).send("Genre not found");
+    });
+});
+
+////////////////////
+//! CRU-[D]
+////////////////////
+//* DB FUNCTION: Mongoose for validating the submitted genre
+async function removeGenre(id) {
+  const result = await Genres.deleteOne({ _id: id });
+  if (!result.n) {
+    return Promise.reject(new Error("DB:Genre not found"));
+  } else {
+    return result;
+  }
+}
+
+//* HTTP FUNCTION: Router for dealing with the read HTTP request and response.
+router.delete("/:_id", (req, res) => {
+  removeGenre(req.params._id)
+    .then(response => res.send(response))
+    .catch(err => {
+      res.status(404).send("Genre not found");
+    });
+});
+
+// * ----------  PRE VALIDATE GENRE NAMES ----------
+function validateGenre(genre) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .trim()
+      .required()
+  });
+
+  return schema.validate(genre);
+}
+
+module.exports = router;
+
+
+
+
+
+
+index.js
+`````````````````````````````````````````````````````````````````````````````````````````````````````````````
+const express = require("express");
+const genres = require("./routes/genres");
+const app = express();
+
+app.use(express.json());
+app.use("/api/genres", genres);
+
+// * SET PORT AND START LISTENING
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on port ${port}...`));
+
+
+
+
+
+
+package.json
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+{
+  "name": "vidly-backend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/joi": "^17.1.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.9.2"
+  }
+}
