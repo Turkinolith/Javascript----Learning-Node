@@ -1,0 +1,194 @@
+*******************************************
+**** Vidly - Restructuring the Project ****
+*******************************************
+In the customers.js module I have a bunch of customer route handlers, have the validateCustomer function, and definition of the Customers module
+
+This is not a complex model. In a real world app it'll be more complex so the code in this module is going to grow.
+
+To keep apps maintainable I should ensure that each module is responsible for only ONE thing.
+This is the single responsibility principle in practice.
+
+In this app, the customers module is part of the routes folder.
+So technically the only thing I should have in this module is the definition of the customers routes.
+
+The definition of a customer object doesn't really belong in this module.
+So, in this example I'll extract this code and put it somewhere else.
+
+
+#1 -
+	I'll create a new folder called "models"
+	In it I'll make a file: customer.js
+	
+#2 -
+	I'll move the definition of the Customers model into the new file.
+	In it I have a dependency on mongoose so I need to import it.
+
+#3 - 
+	I'll also move the function for validating a Customer into the new file.
+	And I'll also move the Joi import and CustomJoi import into the new file.
+	
+Now, all of the logic for defining and validating a customer object is located in customer.js
+And the customers.js module knows all the routes for working with customers.
+
+#4 -
+	Now I can export the Customers model and the validateCustomer function.
+		module.exports.Customers = Customers;
+	or to shorten it:
+		exports.Customers = Customers;
+	
+	And for validateCustomer I can simply shorten it to "validate"
+		exports.validate = validateCustomer;
+	
+
+#5 -
+	Back in the old module, I have 2 choices.
+	I can either load the customer module like this:
+		const customer = require("../models/customer");
+	This object has two properties. Customer and validate
+	
+	So, if I load the module in order to reference the customer model I have to write: customer.Customer.find()
+		This looks really ugly.
+		
+	A better approach is to use object destructuring. 
+	I know the object returned from the customer module has 2 properties, customer and validate.
+	I can destructure the object and load it into 2 constants:
+		const {Customers, validate} = require("../models/customer");
+	
+	With this the Customers constant is set to what is returned from that module.Customer, similarly the validate will be whats returned from the module .validate.
+	
+	Now, the only change I need to do is go through the code of customers.js and replace 2 instances of validateCustomer with validate and it's done!
+
+
+Finally, for an exercise I did the same treatment on the "Genres.js" file and made a genre.js module.
+
+
+Genre.js
+`````````````````````````````````````````````````````````````````````````````````
+
+const Joi = require("@hapi/joi");
+const mongoose = require("mongoose");
+
+// * ----------  PRE VALIDATE GENRE NAMES ----------
+function validateGenre(genre) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .max(50)
+      .trim()
+      .required()
+  });
+
+  return schema.validate(genre);
+}
+
+//* Define genres model (moved the schema declaration into it.)
+const Genres = mongoose.model(
+  "Genre",
+  new mongoose.Schema({
+    name: {
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 50,
+      trim: true,
+      unique: true
+    }
+  })
+);
+
+exports.Genres = Genres;
+exports.validate = validateGenre;
+
+
+
+
+genres.js
+``````````````````````````````````````````````````````````````````````````````````````````````````
+const { Genres, validate } = require("../Models/genre");
+const express = require("express");
+const router = express.Router();
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* With error handling to prevent duplicates.
+router.post("/", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    let genre = new Genres({ name: req.body.name });
+    genre = await genre.save();
+    res.send(genre);
+  } catch (ex) {
+    if (ex.code)
+      return res.status(500).send(new Error("Error: Duplicate genre").message);
+    res.status(500).send(ex.message);
+  }
+});
+
+////////////////////
+//! C-[R]-UD
+////////////////////
+
+//! *** Returns all genres ***
+//* Also sorts genres by name
+router.get("/", async (req, res) => {
+  try {
+    const genres = await Genres.find().sort("name");
+    res.send(genres);
+  } catch (err) {
+    res.status(500).send("Error getting genre list");
+  }
+});
+
+//! Returns a specific genre
+router.get("/:_id", async (req, res) => {
+  try {
+    const genre = await Genres.findById(req.params._id);
+    if (!genre) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(genre);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+////////////////////
+//! CR-[U]-D
+////////////////////
+//! Updates a specific genre and returns the updated value
+router.put("/:_id", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    const genre = await Genres.findByIdAndUpdate(
+      req.params._id,
+      { name: req.body.name },
+      { new: true }
+    );
+    if (!genre) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(genre);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+////////////////////
+//! CRU-[D]
+////////////////////
+router.delete("/:_id", async (req, res) => {
+  try {
+    const response = await Genres.findByIdAndDelete(req.params._id);
+    if (!response) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(response);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+////////////////////////
+//! Exports
+////////////////////////
+module.exports = router;
+
