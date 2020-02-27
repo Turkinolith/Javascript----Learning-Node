@@ -1,0 +1,257 @@
+*************************************************
+**** Project - Add Persistence to Genres API ****
+*************************************************
+
+Differences between my solution and the instructors:
+
+#1 He loads mongoose in index.js instead of genres.js, also setting there the db connections
+	likewise removes the connections from genres.js, leaves the mongoose import
+
+#2 His schema has a minlength and maxlength defined on it instead of using joi.
+	doesn't have "unique" set.
+
+#3 He refactors his schema, since the only place it is directly referenced is in the model definition, he moves the declaration into it.
+	//* Define genres model (moved the schema declaration into it.)
+	const Genres = mongoose.model(
+	  "Genre",
+	  new mongoose.Schema({
+		name: {
+		  type: String,
+		  required: true,
+		  minlength: 3,
+		  maxlength: 50,
+		  trim: true,
+		  unique: true
+		}
+	  })
+	);
+
+
+
+#4 His implementation of the C-[R]-UD function: router.get("/" was way more condensed.
+***************** MY VERSION **********************
+	async function getGenres() {
+	  const genres = await Genres.find();
+	  if (!genres) return console.log("Something broke trying to get all genres");
+	  return genres;
+	}
+	router.get("/", (req, res) => {
+	  getGenres()
+		.then(response => res.send(response))
+		.catch(err => res.status(500).send("Error getting genre list"));
+	}); */
+
+*************** His Version (that I revised with error catching **************
+	router.get("/", async (req, res) => {
+	  try {
+		const genres = await Genres.find().sort("name");
+		res.send(genres);
+	  } catch (err) {
+		res.status(500).send("Error getting genre list");
+	  }
+	});
+
+*** I went ahead and revised my own get specific ID function using his as a template: ***
+	router.get("/:_id", async (req, res) => {
+	  try {
+		const genre = await Genres.findById(req.params._id);
+		res.send(genre);
+	  } catch (err) {
+		res.status(404).send("Genre not found");
+	  }
+	});
+
+
+
+#5 His post handler was also a single function, I revised it to add error handling.
+	router.post("/", async (req, res) => {
+	  const { error } = validateGenre(req.body);
+	  if (error) return res.status(400).send(error.details[0].message);
+
+	  try {
+		let genre = new Genres({ name: req.body.name });
+		genre = await genre.save();
+		res.send(genre);
+	  } catch (ex) {
+		if (ex.code)
+		  return res.status(500).send(new Error("Error: Duplicate genre").message);
+		res.status(500).send(ex.message);
+	  }
+	});
+
+#6 His put method is also a single function, which I again revised to bolster the error handling.
+	router.put("/:_id", async (req, res) => {
+	  const { error } = validateGenre(req.body);
+	  if (error) return res.status(400).send(error.details[0].message);
+
+	  try {
+		const genre = await Genres.findByIdAndUpdate(
+		  req.params._id,
+		  { name: req.body.name },
+		  { new: true }
+		);
+		res.send(genre);
+	  } catch (err) {
+		res.status(404).send("Genre not found");
+	  }
+	});
+	
+
+#7 And I went ahead and revised my delete method
+	router.delete("/:_id", async (req, res) => {
+	  try {
+		const response = await Genres.findByIdAndDelete(req.params._id);
+		if (!response) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+		res.send(response);
+	  } catch (err) {
+		res.status(404).send("Genre not found");
+	  }
+	});
+  
+  
+  My revised genres.js
+  ````````````````````````````````````````````````````````````````````````````````````````````````````````
+  const express = require("express");
+const router = express.Router();
+const Joi = require("@hapi/joi");
+const mongoose = require("mongoose");
+
+//* Define genres model (moved the schema declaration into it.)
+const Genres = mongoose.model(
+  "Genre",
+  new mongoose.Schema({
+    name: {
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 50,
+      trim: true,
+      unique: true
+    }
+  })
+);
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* With error handling to prevent duplicates.
+router.post("/", async (req, res) => {
+  const { error } = validateGenre(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    let genre = new Genres({ name: req.body.name });
+    genre = await genre.save();
+    res.send(genre);
+  } catch (ex) {
+    if (ex.code)
+      return res.status(500).send(new Error("Error: Duplicate genre").message);
+    res.status(500).send(ex.message);
+  }
+});
+
+////////////////////
+//! C-[R]-UD
+////////////////////
+
+//! *** Returns all genres ***
+//* Also sorts genres by name
+router.get("/", async (req, res) => {
+  try {
+    const genres = await Genres.find().sort("name");
+    res.send(genres);
+  } catch (err) {
+    res.status(500).send("Error getting genre list");
+  }
+});
+
+// //! Returns a specific genre
+router.get("/:_id", async (req, res) => {
+  try {
+    const genre = await Genres.findById(req.params._id);
+    if (!genre) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(genre);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+////////////////////
+//! CR-[U]-D
+////////////////////
+//! Updates a specific genre and returns the updated value
+router.put("/:_id", async (req, res) => {
+  const { error } = validateGenre(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    const genre = await Genres.findByIdAndUpdate(
+      req.params._id,
+      { name: req.body.name },
+      { new: true }
+    );
+    if (!genre) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(genre);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+////////////////////
+//! CRU-[D]
+////////////////////
+router.delete("/:_id", async (req, res) => {
+  try {
+    const response = await Genres.findByIdAndDelete(req.params._id);
+    if (!response) return res.status(404).send("Genre not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(response);
+  } catch (err) {
+    res.status(404).send("Genre not found");
+  }
+});
+
+// * ----------  PRE VALIDATE GENRE NAMES ----------
+function validateGenre(genre) {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .max(50)
+      .trim()
+      .required()
+  });
+
+  return schema.validate(genre);
+}
+
+module.exports = router;
+
+
+
+
+my revised index.js
+``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+const express = require("express");
+const mongoose = require("mongoose");
+const genres = require("./routes/genres");
+const app = express();
+
+mongoose.set("useNewUrlParser", true);
+mongoose.set("useFindAndModify", false);
+mongoose.set("useCreateIndex", true);
+mongoose.set("useUnifiedTopology", true);
+
+//* This connection string is hardcoded, but in a real app it should be located in a cfg file.
+mongoose
+  .connect("mongodb://localhost/vidly")
+  .then(() => console.log("connected to MongoDB..."))
+  .catch(err => console.log("Could not connect to MongoDB...", err.message));
+
+app.use(express.json());
+app.use("/api/genres", genres);
+
+// * SET PORT AND START LISTENING
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on port ${port}...`));
+
+
+
