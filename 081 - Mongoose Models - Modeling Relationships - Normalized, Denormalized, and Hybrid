@@ -1,0 +1,101 @@
+******************************************************************
+**** Mongoose - Modeling Relationships between connected Data ****
+******************************************************************
+
+In all of the examples so far I've worked with single self-contained documents.
+In the real world the entities and concepts I work with have some sort of association.
+
+Example:
+	Can have a course document or object, and it has an author.
+	But an author is more than just a name, you could have a collection of Authors where I store Author documents and in it there would be properties like name, image, website, and so on.
+
+In this section I'll be going over how to work with related documents.
+
+****************************************************
+** 2 Approaches to working with related documents **
+****************************************************
+#1
+	Using References (Normalization) -> CONSISTENCY
+	
+		Using this approach, you would have a separate collection for storing Authors.
+			let author = {
+			  name: "Larry"
+			}
+		
+			let course = {
+			  author: "#id-of-author-doc-in-authors-collection"
+			  }
+		
+		In the author property for the course object, it's using a reference.
+		In Relational databases there is a concept of relationship that enforces data integrity.
+		In noSQL databases like MongoDB, there isn't a relationship. So, even if I set the author ID there, there would be no relationship or association between the author and course
+		  documents within the DB. In other words I can set the author ID to something invalid and MongoDB doesn't care about that.
+		  
+		A course could also have multiple authors. So instead of the author property I could have "authors" that I set to an array of references.
+			  let course = {
+			    authors: [
+				"id1",
+				"id2"
+			    ]
+			  }
+		For simplicity I'll just work with a single author.
+		
+	
+#2 
+	Using Embedded Documents (Denormalization) -> PERFORMANCE
+	
+		Instead of having a separate collection of authors, I can embed an author document inside of another document.
+		
+			let course = {
+			  author: {
+			    name: "Larry"
+			  }
+			}
+	
+	Both approaches have their strengths and weaknesses. Which one you use depends upon the details of your application and its query requirements.
+
+	``````````````````````````````````````````````````````````````
+***** It is a trade off between query performance vs consistency *****
+    ``````````````````````````````````````````````````````````````
+
+Explanation:
+	With the Normalization approach, There is a single place to define an author. If I want to change the name of an author there is a single place for me to edit and all courses that reference that field 
+		will immediately see the updated data.
+	But, it needs to do an extra query in order to load the related Author.
+	Sometimes that extra query may not be a big deal but sometimes you need queries to run as fast as possible.
+		So, there is CONSISTENCY but not performance.
+	If speed is a major concern, then you should consider the 2nd approach.
+	
+	With the Denormalization approach, we can load the course object and its author with a single query. No extra queries needed to load an author as it is located inside of the course object or document.
+	  However, if I decide to change the name of the author chances are there are multiple documents that need to be updated. If I have an automated task to update and it fails then there is the chance that 
+	  I'll have partially updated data, so now it would be inconsistent.
+		So, there is PERFORMANCE in this approach, but not consistency.
+	
+
+
+#3
+	There is a 3rd approach called a Hybrid approach. 
+		Imagine each author has 50+ properties. We don't want to repeat each of those properties in every course in the Database.
+		So can have a separate collection of authors, but we can also embed an author document inside of a course document, but not the complete representation of the Author.
+		
+		With the Hybrid Approach we will have a collection like this:
+			let author = {
+			name: "Larry"
+			/// 50 other properties
+			}
+			
+			let course = {
+				author: {
+				  id: 'Reference to author doc'
+				  name: "Larry"
+				}
+			}
+		
+		This allows you to quickly read a course object as well as optimizing the query performance but we don't have to store all the properties inside of the document.
+		This approach is particularly useful if you want to have a snapshot of your data at a point in time.
+			EX: Imagine you are designing an e-commerce app.
+				There you have collections like orders, products, shopping carts, etc.
+				In each order we need to store a snapshot of a product because we want to know the price of that product at a given point in time.
+				So this is where we would use the hybrid approach.
+		
+		There is no right or wrong answer to which of the 3 methods you use, its just depends on the trade-offs you want to make.
