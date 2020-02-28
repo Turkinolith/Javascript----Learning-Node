@@ -1,0 +1,143 @@
+*******************************
+**** Referencing Documents ****
+*******************************
+How to reference a document within another document.
+
+I'll be using the population.js file that was attached to the lecture and I'll add the text of at the bottom of these notes.
+
+Within the file there are 2 models:
+	const Author = mongoose.model('Author', new mongoose.Schema({
+	  name: String,
+	  bio: String,
+	  website: String
+	}));
+
+	const Course = mongoose.model('Course', new mongoose.Schema({
+	  name: String,
+	}));
+
+And a few helper functions: 
+	createAuthor
+	createCourse
+	listCourses
+
+In this lecture I'll add as a reference an "author" property to the Course model.
+
+First I'll delete the "playground" database from mongoDB to clear it out and start fresh.
+At the bottom of the document it calls the "createAuthor" function to create an Author entry with specific properties.
+I run the file and create the DB entry.
+
+Next, I comment out the createAuthor line and enable createCourse, I paste the DB id for the created author into the 2nd parameter of the function.
+
+Note the implementation of the function, it creates a new course with 2 parameters: Name and Author.
+	async function createCourse(name, author) {
+	  const course = new Course({
+		name,
+		author
+	  });
+
+When I run the file a 2nd time I get this result:
+	{ _id: 5e5976991d7c9003c80baf1b, name: 'Node Course', __v: 0 }
+Here we have the DB ID and the name, but note that the author isn't showing up in it.
+
+This is because when the Course model was defined, we only added the name property.
+	const Course = mongoose.model(
+	  "Course",
+	  new mongoose.Schema({
+		name: String
+	  })
+	);
+So when saving the course object only the values defined in the model will be persisted in the database.
+
+
+Here I need to add a new property into the model.
+Author, I add an object as the value, I need to specify the type of object which is an ObjectID, its nested fairly deeply. mongoose.Schema.Types.ObjectID
+I also need to add another property, ref and add the name of a target collection. In this case "Author"
+	const Course = mongoose.model(
+	  "Course", new mongoose.Schema({
+		name: String,
+		author: {
+		  type: mongoose.Schema.Types.ObjectID, 
+		  ref: 'Author'
+		}
+	  })
+	);
+
+In this author property, I'll store an objectID that references an Author document.
+	This is still not a proper relationship, I can store a course with an Invalid Author and Mongo won't complain about that.
+
+Now I run the file one more time and I get this result:
+
+{
+  _id: 5e5978744e9c773c10659c13,   
+  name: 'Node Course',
+  author: 5e5975fe038dc130443d993c,
+  __v: 0
+}
+
+Here is the new course object and we have the Author property.
+
+In compass I can view this and see that there are 2 course documents. One doesn't have an author property, the other does and its an ObjectID that references a DB key in the
+authors collection.
+
+
+population.js (post edits)
+`````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+const mongoose = require("mongoose");
+
+mongoose
+  .connect("mongodb://localhost/playground")
+  .then(() => console.log("Connected to MongoDB..."))
+  .catch(err => console.error("Could not connect to MongoDB...", err));
+
+const Author = mongoose.model(
+  "Author",
+  new mongoose.Schema({
+    name: String,
+    bio: String,
+    website: String
+  })
+);
+
+const Course = mongoose.model(
+  "Course",
+  new mongoose.Schema({
+    name: String,
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Author"
+    }
+  })
+);
+
+async function createAuthor(name, bio, website) {
+  const author = new Author({
+    name,
+    bio,
+    website
+  });
+
+  const result = await author.save();
+  console.log(result);
+}
+
+async function createCourse(name, author) {
+  const course = new Course({
+    name,
+    author
+  });
+
+  const result = await course.save();
+  console.log(result);
+}
+
+async function listCourses() {
+  const courses = await Course.find().select("name");
+  console.log(courses);
+}
+
+//createAuthor('Mosh', 'My bio', 'My Website');
+
+createCourse("Node Course", "5e5975fe038dc130443d993c");
+
+// listCourses();
