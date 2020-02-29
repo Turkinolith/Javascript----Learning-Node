@@ -1,0 +1,154 @@
+********************
+**** Population ****
+********************
+
+Now, using the code from the previous lesson, its time to get all of the courses along with their authors.
+To do this I'll comment back out the createcourse line near the bottom and uncomment the listCourses() line.
+The function looks like this:
+	
+	async function listCourses() {
+	  const courses = await Course.find().select("name");
+	  console.log(courses);
+	}
+
+Returns:
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },
+	  { _id: 5e5978744e9c773c10659c13, name: 'Node Course' } 
+	]
+
+If I go back to the listCourses() function and add "author" to the select and run it again:
+	async function listCourses() {
+	  const courses = await Course.find().select("name author");
+	  console.log(courses);
+	}
+
+Returns: 
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },
+	  {
+		_id: 5e5978744e9c773c10659c13,
+		name: 'Node Course',
+		author: 5e5975fe038dc130443d993c
+	  }
+	]
+
+The 2nd document has an Author, but I'm only getting the reference to the object id.
+
+```````````````````````````
+*** THE POPULATE METHOD ***
+```````````````````````````
+In a real world app I'd want to load the document so I can display its name. This is where I use the populate method.
+
+After .find() I'll call populate. 
+
+As its first argument I specify the path to a given property. In this case our property is "author" and because earlier when defining the Course Model I set "author" to 
+be an ObjectId and reference the "Author" collection.
+So, when I load a Course object and populate the author property Mongoose knows it should query the Authors collection in MongoDB.
+So, back in the listCourses function, I simply call .populate() and pass the "author" property.
+
+	async function listCourses() {
+	  const courses = await Course
+	    .find()
+		.populate('author')
+		.select("name author");
+	  console.log(courses);
+	}
+
+Now lets see what happens when I run it:
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },
+	  {
+		_id: 5e5978744e9c773c10659c13,
+		name: 'Node Course',
+		author: {
+		  _id: 5e5975fe038dc130443d993c,
+		  name: 'Mosh',
+		  bio: 'My bio',
+		  website: 'My Website',
+		  __v: 0
+		}
+	  }
+	]
+The first course doesn't have an author, so we don't get anything. 
+But, the 2nd document has an author and we get the complete representation of an Author document. 
+In a Real world app an Author can have multiple properties but when showing a list of Courses I don't want to show all of that, I just want the name property.
+
+When calling the populate method as a 2nd argument I can specify the properties I want to include or exclude.
+In this case I'll include "name"
+
+	async function listCourses() {
+	  const courses = await Course
+	    .find()
+		.populate('author', 'name')
+		.select("name author");
+	  console.log(courses);
+	}
+
+Returns:
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },  
+	  {
+		_id: 5e5978744e9c773c10659c13,
+		name: 'Node Course',
+		author: { _id: 5e5975fe038dc130443d993c, name: 'Mosh' }
+	  }
+	]
+
+Now the author property is an object with only 2 properties, _id: and  name:
+
+I can also exclude the _id property. 
+Back in the code I add a dash after name to EXCLUDE the property then add the name of the target
+so: 'name -_id' = include name, exclude _id
+
+	async function listCourses() {
+	  const courses = await Course
+	    .find()
+		.populate('author', 'name -_id')
+		.select("name author");
+	  console.log(courses);
+	}
+
+Returns:
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },
+	  {
+		_id: 5e5978744e9c773c10659c13,
+		name: 'Node Course',
+		author: { name: 'Mosh' }
+	  }
+	]
+
+Now the author property is an object with only one property, name.
+
+
+** Populate on multiple properties **
+It's also possible to populate multiple properties.
+For example lets imagine that each course also references a "category" and category references the category document.
+To do so, just call .populate() again pointing towards 'category' and, optionally, pick only the name property.
+
+	async function listCourses() {
+	  const courses = await Course
+	    .find()
+		.populate('author', 'name -_id')
+		.populate('category', 'name')
+		.select("name author");
+	  console.log(courses);
+	}
+
+
+** Invalid Info **
+As noted before, MongoDB doesn't maintain a relation between documents. If I edited the author reference to something invalid mongoDB is perfectly fine with that.
+What happpens if I run the last valid (before the multi property example) version of the function when the author reference in Mongo is invalid?
+
+Returns:
+	[
+	  { _id: 5e5976991d7c9003c80baf1b, name: 'Node Course' },
+	  {
+		_id: 5e5978744e9c773c10659c13,
+		name: 'Node Course',
+		author: null
+	  }
+	]
+
+Now the author returns null, because there is no author with the given ID in the database.
