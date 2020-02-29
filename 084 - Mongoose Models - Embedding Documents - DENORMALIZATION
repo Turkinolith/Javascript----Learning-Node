@@ -1,0 +1,310 @@
+*****************************
+**** Embedding Documents ****
+*****************************
+I've now covered using References to relate documents (NORMALIZATION)
+Now I'll learn how to embed documents (DENORMALIZATION)
+
+I'll use the example file: embedding.js which I'll copy at the bottom of this set of notes.
+
+In it I have the authorSchema which is exactly like how I had it in the normalization lecture. 3 properties: name, bio, website.
+An Author model, and a Course model.
+
+	const Course = mongoose.model('Course', new mongoose.Schema({
+	  name: String
+	}));
+
+In the Course model I don't have an author property and that is what I'll add in this lecture.
+So, I add the author property:
+
+	const Course = mongoose.model('Course', new mongoose.Schema({
+	  name: String,
+	  author: 
+	}));
+
+In the last lecture, I set author to an objectID and referenced the Author collection.
+In this case I'll embed the Author document inside of the Course document.
+
+#1 -
+	I set the type of the author property to authorSchema which is already defined in the document.
+		
+			const Course = mongoose.model('Course', new mongoose.Schema({
+			  name: String,
+			  author: authorSchema
+			}));
+
+This is the only change I need to make.
+
+
+Now lets look at the createCourse function.
+	async function createCourse(name, author) {
+	  const course = new Course({
+		name, 
+		author
+	  }); 
+	const result = await course.save();
+    console.log(result);
+	}
+We take a course name, and author, then initialize the course and save it, exactly like before.
+
+At the bottom of the file there is a call to the function to create a course with an author
+	createCourse('Node Course', new Author({ name: 'Larry' }));
+
+When I run the file I return this:
+
+{
+  _id: 5e5aead8f6c2d32e4ca1d565,
+  name: 'Node Course',
+  author: { _id: 5e5ae817939c4642a09ffe7b, name: 'Larry' },
+  __v: 0
+}
+
+Here I see that author: is an object with 2 properties, _id and name:
+
+This is an embedded or "sub-document"
+
+````````````````````````````````````````
+*** SUB-DOCUMENTS SUPPORT VALIDATION ***
+````````````````````````````````````````
+sub-documents are like normal documents so most features that are available on normal documents are available on sub-documents.
+So, I could for example enforce validation here and make "name" required or make sure that every course has an author.
+
+Here is the definition of the Course schema:
+	const Course = mongoose.model(
+	  "Course",
+	  new mongoose.Schema({
+		name: String,
+		author: authorSchema
+	  })
+	);
+
+If I wanted to make the author property required pass a Schema type object and set the type and required property, exactly like I used it before.
+
+	const Course = mongoose.model(
+	  "Course",
+	  new mongoose.Schema({
+		name: String,
+		author: {
+		  type: authorSchema,
+		  required: true
+		}
+	  })
+	);
+
+Likewise if I want to make a particular property of the authorSchema be required, such as "name", then I apply that requirement on the authorSchema itself.
+
+	const authorSchema = new mongoose.Schema({
+	  name: {
+		type: String,
+		required: true
+	  },
+	  bio: String,
+	  website: String
+	});
+
+```````````````````````````````````````````````````
+*** SUB-DOCUMENTS CAN NOT BE SAVED ON THEIR OWN ***
+```````````````````````````````````````````````````
+However, these sub-documents can not be saved on their own. They can only be saved in the context of their parent.
+
+Lets say I want to change the name of the author.
+First I have to get the _id of the course object from the DB.
+
+Next, lets write an update function:
+
+	async function updateAuthor(courseID) {
+	  const course = await Course.findById(courseID);
+	  course.author.name = "Larry Boles";
+	  course.save();
+	}
+*note: there is no course.author.save(), that does not exist. just course.save() to save the parent.
+
+Now I run this function, passing the _id from the course object in MongoDB:
+	updateAuthor("5e5aead8f6c2d32e4ca1d565");
+
+It doesn't return anything, but if I look in MongoDB Compass the author name is updated to "Larry Boles"
+
+
+`````````````````````````````````````
+*** UPDATE SUB-DOCUMENTS DIRECTLY ***
+`````````````````````````````````````
+Instead of querying first, I can update sub-documents directly in the database.
+I'll use the same function as before, but instead of "findById" just use "update"
+Then, as the first argument pass a query object to locate the course with the given ID and the second argument is the update object.
+There I use the $set operator and set that to an object and pass one or more key/value pairs.
+	Here to access a nested property I use dot notation. So to update the author of a course I use 'author.name': 'John Smith'
+
+	async function updateAuthor(courseID) {
+	  const course = await Course.update({ _id: courseID }, {
+	    $set: {
+		  'author.name': 'John Smith'
+		}
+	  });
+	}
+
+With this I don't need to modify the object in memory and save it explicitly, it updates directly in the Database.
+
+
+`````````````````````````````````
+*** REMOVING THE SUB-DOCUMENT ***
+`````````````````````````````````
+To remove the sub-document use the unset operator.
+
+I replace $set with $unset, I can either,
+Remove the name property of the sub-document, by setting the value to an empty string.
+
+	async function updateAuthor(courseID) {
+	  const course = await Course.update(
+		{ _id: courseID },
+		{
+		  $unset: {
+			"author.name": ""
+		  }
+		}
+	  );
+	}
+
+Or remove the author sub-document as a whole, again by setting the value to an empty string.
+
+	async function updateAuthor(courseID) {
+	  const course = await Course.update(
+		{ _id: courseID },
+		{
+		  $unset: {
+			"author": ""
+		  }
+		}
+	  );
+	}
+
+
+embedding.js (pre-work)
+```````````````````````````````````````````````````````````````````````````````````````````
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost/playground')
+  .then(() => console.log('Connected to MongoDB...'))
+  .catch(err => console.error('Could not connect to MongoDB...', err));
+
+const authorSchema = new mongoose.Schema({
+  name: String,
+  bio: String,
+  website: String
+});
+
+const Author = mongoose.model('Author', authorSchema);
+
+const Course = mongoose.model('Course', new mongoose.Schema({
+  name: String
+}));
+
+async function createCourse(name, author) {
+  const course = new Course({
+    name, 
+    author
+  }); 
+  
+  const result = await course.save();
+  console.log(result);
+}
+
+async function listCourses() { 
+  const courses = await Course.find();
+  console.log(courses);
+}
+
+createCourse('Node Course', new Author({ name: 'Larry' }));
+
+
+
+embedding.js (after-work)
+```````````````````````````````````````````````````````````````````````````````````````````
+const mongoose = require("mongoose");
+
+mongoose
+  .connect("mongodb://localhost/playground")
+  .then(() => console.log("Connected to MongoDB..."))
+  .catch(err => console.error("Could not connect to MongoDB...", err));
+
+const authorSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  bio: String,
+  website: String
+});
+
+const Author = mongoose.model("Author", authorSchema);
+
+const Course = mongoose.model(
+  "Course",
+  new mongoose.Schema({
+    name: String,
+    author: authorSchema
+  })
+);
+
+async function createCourse(name, author) {
+  const course = new Course({
+    name,
+    author
+  });
+
+  const result = await course.save();
+  console.log(result);
+}
+
+async function listCourses() {
+  const courses = await Course.find();
+  console.log(courses);
+}
+
+//* Using find by ID
+// async function updateAuthor(courseID) {
+//   const course = await Course.findById(courseID);
+//   course.author.name = "Larry Boles";
+//   course.save();
+// }
+
+//* Updating the sub-document directly in the DB
+async function updateAuthor(courseID) {
+  const course = await Course.update(
+    { _id: courseID },
+    {
+      $set: {
+        "author.name": "John Smith"
+      }
+    }
+  );
+}
+
+//* Remove the name property of the author sub-document
+async function removeAuthorName(courseID) {
+  const course = await Course.update(
+    { _id: courseID },
+    {
+      $unset: {
+        "author.name": ""
+      }
+    }
+  );
+}
+
+//* Remove the whole Author sub-document
+async function deleteAuthor(courseID) {
+  const course = await Course.update(
+    { _id: courseID },
+    {
+      $unset: {
+        author: ""
+      }
+    }
+  );
+}
+
+//createCourse("Node Course", new Author({ name: "Larry" }));
+
+//updateAuthor("5e5aead8f6c2d32e4ca1d565");
+
+deleteAuthor("5e5aead8f6c2d32e4ca1d565");
+
