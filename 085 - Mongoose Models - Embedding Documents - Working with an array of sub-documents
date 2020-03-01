@@ -1,0 +1,113 @@
+*****************************************
+**** Using an Array of Sub-documents ****
+*****************************************
+
+In the last lecture I added the author document as a sub-document to the Course document.
+
+In this one I'll go over changing this to an array of sub-documents.
+
+
+	const Course = mongoose.model(
+	  "Course",
+	  new mongoose.Schema({
+		name: String,
+		author: authorSchema
+	  })
+	);
+
+#1 - First I'll rename author to "authors", then change its value to an array of authorSchema
+
+	const Course = mongoose.model(
+	  "Course",
+	  new mongoose.Schema({
+		name: String,
+		authors: [authorSchema]
+	  })
+	);
+
+#2 - When creating a new Course I'll also have that point to authors
+
+	async function createCourse(name, authors) {
+	  const course = new Course({
+		name,
+		authors
+	  });
+
+#3 - Finally, instead of creating a course with a single author:
+
+	createCourse("Node Course", new Author({ name: "Larry" }));
+
+Instead I'll pass an array with several.
+
+	createCourse("Node Course", [
+	  new Author({ name: "Larry" }),
+	  new Author({ name: "Lisa" }),
+	]);
+
+
+When I run the code I get this output:
+
+	{
+	  _id: 5e5c398e822d1b6c3c3574c0,
+	  name: 'Node Course',
+	  authors: [
+		{ _id: 5e5c398e822d1b6c3c3574be, name: 'Larry' },
+		{ _id: 5e5c398e822d1b6c3c3574bf, name: 'Lisa' }
+	  ],
+	  __v: 0
+	}
+
+In MongoDB Compass I see that the authors field is an array with 2 objects, Larry and Lisa are the 2 objects each with their own unique ID.
+
+`````````````````````````````````````````
+*** Add to the array of sub-documents ***
+`````````````````````````````````````````
+
+Lets create a new function:
+Supply a courseID and an author name, find the ID of the course and save it to memory.
+Next get the authors of the course, which is an array, and push the author name to it.
+Now this is only in memory still, it hasn't been saved yet.
+So: course.save();
+	
+	async function addAuthor(courseID, author) {
+	  const course = await Course.findById(courseID);
+	  course.authors.push(author);
+	  course.save();
+	}
+
+	addAuthor("5e5c398e822d1b6c3c3574c0", new Author({ name: "Monkey" }));
+
+
+
+``````````````````````````````````````````````
+*** Delete from the array of sub-documents ***
+``````````````````````````````````````````````
+Lets add another new function:
+Lets call it removeAuthor, it takes a courseID and an authorID.
+It starts off the same as the previous by finding the course by ID and returning it.
+	async function removeAuthor(courseID, authorID) {
+		const course = await Course.findById(courseID);
+	
+	}
+
+Once I've found the course object I can go into course.authors. There is a method called "id()" with it 
+I can look up a child object by its ID. So I can pass authorID.
+	course.authors.id(authorID)
+
+That gives me the author object.
+	async function removeAuthor(courseID, authorID) {
+	  const course = await Course.findById(courseID);
+	  const author = course.authors.id(authorID);
+
+	}
+
+Now I can call the remove method on this object and finally save the course.
+	async function removeAuthor(courseID, authorID) {
+	  const course = await Course.findById(courseID);
+	  const author = course.authors.id(authorID);
+	  author.remove();
+	  course.save();
+	}
+
+Now I just call the function with the courseID# and the AuthorID# to remove:
+	removeAuthor("5e5c398e822d1b6c3c3574c0", "5e5c3b9a46ff476d987606fc");
