@@ -1,0 +1,156 @@
+***************************************
+**** PROJECT: Build the Movies API ****
+***************************************
+Task: Build the API to manage a list of movies.
+
+Shape of the movie object:
+
+_id: ID-Object
+title: String
+numberInStock: number
+dailyRentalRate: number
+genre: Sub-Document { _id: ID-Object, name: String }
+
+There is already a genres DB, so this is the hybrid approach here.
+This is also taking into account that it is highly unlikely I'll rename a genre in the future.
+So We're not concerned about the data becoming inconsistent in the future.
+
+Why have genres in their own list? Because the front-end is going to make a genre list so I still want them in one place.
+Also it is way faster and easier to query its own DB for them than it is to query the whole movie list and try to extract 
+a unique list of the genres out of that.
+
+````````````````
+*** movie.js ***
+````````````````
+
+const Joi = require("@hapi/joi");
+const mongoose = require("mongoose");
+const { genreSchema } = require("./genre");
+
+// * ----------  PRE VALIDATE MOVIE ----------
+function validateMovie(movie) {
+  const schema = Joi.object({
+    title: Joi.string()
+      .min(2)
+      .max(90)
+      .trim()
+      .required(),
+    numberInStock: Joi.number()
+      .integer()
+      .min(0)
+      .required(),
+    dailyRentalRate: Joi.number()
+      .integer()
+      .min(0)
+      .max(Joi.ref("numberInStock"))
+      .required(),
+    genreId: Joi.string() //! Note genreId, not genre, because you want the client to ONLY send the genreId
+      .required()
+  });
+
+  return schema.validate(movie);
+}
+
+//* Define movies model (moved the schema declaration into it.)
+const Movie = mongoose.model(
+  "Movies",
+  new mongoose.Schema({
+    title: {
+      type: String,
+      required: true,
+      minlength: 2,
+      maxlength: 90,
+      trim: true,
+      unique: true
+    },
+    numberInStock: {
+      type: Number,
+      min: 0,
+      max: 255,
+      required: true
+    },
+    dailyRentalRate: {
+      type: Number,
+      min: 0,
+      max: 255,
+      required: true,
+      validate: {
+        validator: function(v) {
+          return v <= this.numberInStock;
+        },
+        message:
+          "Daily rental rate must be less than or equall to number in stock."
+      }
+    },
+    genre: {
+      type: genreSchema,
+      required: true
+    }
+  })
+);
+
+exports.Movie = Movie;
+exports.validateMovie = validateMovie;
+
+
+
+`````````````````
+*** movies.js ***
+`````````````````
+const { Movie, validateMovie } = require("../Models/movie");
+const { Genres } = require("../Models/genre");
+const express = require("express");
+const router = express.Router();
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected input format: {"title": "string", "genreId": "string", "numberInStock": "number", "dailyRentalRate": "number"}
+
+router.post("/", async (req, res) => {
+  const { error } = validateMovie(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const genre = await Genres.findById(req.body.genreId); //* Searches Genres DB with ID# provided by genreId, returns genre object w. name & _id
+  if (!genre) return res.status(400).send("Invalid genre.");
+
+  try {
+    const movie = new Movie({
+      title: req.body.title,
+      genre: {
+        //* Why not set the genre here to the genre object on line 15?
+        //* Because it has/could-have more properties that I don't want to put into the movie DB. I don't want to store all of those properties here.
+        _id: genre._id,
+        name: genre.name
+      },
+      numberInStock: req.body.numberInStock,
+      dailyRentalRate: req.body.dailyRentalRate
+    });
+    await movie.save();
+
+    res.send(movie);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+////////////////////
+//! C-[R]-UD
+////////////////////
+
+//! *** Returns all movies ***
+//* Also sorts movies by title
+router.get("/", async (req, res) => {
+  try {
+    const movies = await Movie.find().sort("title");
+    res.send(movies);
+  } catch (err) {
+    res.status(500).send("Error getting movie list");
+  }
+});
+
+////////////////////////
+//! Exports
+////////////////////////
+module.exports = router;
+
