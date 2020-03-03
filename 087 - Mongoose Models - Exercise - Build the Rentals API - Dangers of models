@@ -1,0 +1,206 @@
+I ended up working yesterday and today on this note. It threw a hell of a curveball when I ran into the dreaded
+"Cannot overwrite 'Customers' model once compiled" error.
+
+************** TRICK LEARNED *************
+* In my customer.js model file, which I required in both the customers.js route and the rentals.js route I had this:
+*  const Customers = mongoose.model("Customer", customerSchema);
+*
+* I could avoid the mongoose error/crash by doing this instead:
+*
+*  let Customers;
+*  try {
+*    Customers = mongoose.model("Customer");
+*  } catch (error) {
+*    Customers = mongoose.model("Customer", customerSchema);
+*  }
+*
+* This feels "hacky" but it fixed the issue and let my backend work as I would have expected it to do so.
+
+
+****************************************
+**** PROJECT: Build the Rentals API ****
+****************************************
+
+Should be able to:
+create a new rental
+post /api/rentals
+
+get list of rentals
+get /api/rentals
+
+
+Rentals model shape
+[
+{
+	{
+	customer_id
+	name
+	phone
+	isGold
+	},
+	{
+	movie_id
+	title
+  RentalRate
+	},
+	{
+	Date Out: default Date.now, required
+	Datereturned: NOT-REQUIRED - will be filled in on "Return"
+	Rental Fee: NOT-REQUIRED - will be filled in on "Return"
+	}
+}
+ ]
+
+**************************Solution***************************
+
+customer.js
+`````````````````````````````````````````````````````````````
+const mongoose = require("mongoose");
+const Joi = require("@hapi/joi");
+const CustomJoi = Joi.extend(require("joi-phone-number"));
+
+// * ----------  PRE VALIDATE CUSTOMER NAME and PHONE NUMBER ----------
+function validateCustomer(customer) {
+  const schema = CustomJoi.object({
+    name: CustomJoi.string()
+      .min(2)
+      .max(30)
+      .trim()
+      .required(),
+    phone: CustomJoi.string()
+      .phoneNumber({ defaultCountry: "US", strict: true })
+      .trim()
+      .required(),
+    isGold: CustomJoi.boolean()
+  });
+
+  return schema.validate(customer);
+}
+
+const customerSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    minlength: 2,
+    maxlength: 30,
+    trim: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 5,
+    maxlength: 50
+  },
+  isGold: {
+    type: Boolean,
+    default: false
+  }
+});
+
+//* Define customers model (moved the schema declaration into it.)
+let Customers;
+try {
+  Customers = mongoose.model("Customer");
+} catch (error) {
+  Customers = mongoose.model("Customer", customerSchema);
+}
+
+//const Customers = mongoose.model("Customer", customerSchema);
+
+exports.Customers = Customers;
+exports.validate = validateCustomer;
+
+
+
+Customers.js
+````````````````````````````````````````````````````````````````````````````````
+const { Customers, validate } = require("../models/customer");
+const express = require("express");
+const router = express.Router();
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected input format: {"name": "string", "phone": "stringOfNumbers", "isGold": "bool"}
+
+router.post("/", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    let customer = new Customers({
+      name: req.body.name,
+      phone: req.body.phone,
+      isGold: req.body.isGold
+    });
+    customer = await customer.save();
+    res.send(customer);
+  } catch (ex) {
+    res.status(500).send(ex.message);
+  }
+});
+
+////////////////////
+//! C-[R]-UD
+////////////////////
+//! *** Returns all customers ***
+//* Also sorts customers by name
+router.get("/", async (req, res) => {
+  try {
+    const customers = await Customers.find().sort("name");
+    res.send(customers);
+  } catch (err) {
+    res.status(500).send("Error getting customer list");
+  }
+});
+
+//! Returns a specific customer
+router.get("/:_id", async (req, res) => {
+  try {
+    const customer = await Customers.findById(req.params._id);
+    if (!customer) return res.status(404).send("Customer not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(customer);
+  } catch (err) {
+    res.status(404).send("Customer not found");
+  }
+});
+
+////////////////////
+//! CR-[U]-D
+////////////////////
+//! Updates a specific customer and returns the updated value
+router.put("/:_id", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    const customer = await Customers.findByIdAndUpdate(
+      req.params._id,
+      { name: req.body.name, phone: req.body.phone, isGold: req.body.isGold },
+      { new: true }
+    );
+    if (!customer) return res.status(404).send("Customer not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(customer);
+  } catch (err) {
+    res.status(404).send("Customer not found");
+  }
+});
+
+////////////////////
+//! CRU-[D]
+////////////////////
+router.delete("/:_id", async (req, res) => {
+  try {
+    const response = await Customers.findByIdAndDelete(req.params._id);
+    if (!response) return res.status(404).send("Customer not found"); //* If the response is null, return a 404, value has already been deleted.
+    res.send(response);
+  } catch (err) {
+    res.status(404).send("Customer not found");
+  }
+});
+
+////////////////////////
+//! Exports
+////////////////////////
+module.exports = router;
