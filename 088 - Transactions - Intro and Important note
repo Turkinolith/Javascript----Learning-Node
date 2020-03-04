@@ -1,0 +1,15 @@
+**********************
+**** Transactions ****
+**********************
+
+In some relational databases like SQL-server or MySQL, there is the concept of "Transaction"
+
+Transaction means a group of operations that should be performed as a unit.
+Either all these operations will complete or if something fails all the ones that have been applied will be rolled back and the DB
+will go back to its initial state.
+
+MongoDB USED to only be able to handle 2phase commits, but now it has transactions. They can not be deployed from a default local server, it must be on a replica set database or shard.
+
+**!!! IMPORTANT NOTE !!!**
+The instructor goes on to use the "fawn" package to handle transactions. however, that package hasn't been updated in 2 years and has high security issues.
+MongoDB and Mongoose both support transactions now, so I'll be following this guide while taking SEPERATE notes for those tools to try to carry over the general lessons to use it in the modern format.
