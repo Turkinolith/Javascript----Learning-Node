@@ -1,0 +1,9 @@
+**** MONGO CONSOLE CHEATSHEET ****
+
+show dbs  = Show all of the databases
+use <name> = set <name> database as current database
+show collections = list collections in the current database 
+db.collection.find() = use mongodb query format to find documents
+	db.customers.find({ name: "Larry"}) = returns documents with name = Larry
+	db.movies.find() = Show all entries in the movies collection
+	db.movies.find({ numberInStock: {$gt: 10} })  = Show all entries that have numberInStock with value greater than 10.
