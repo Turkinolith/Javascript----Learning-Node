@@ -1,0 +1,102 @@
+*******************************
+**** Validating ObjectIDs ****
+*******************************
+In order to validate that the ID's being passed for renters and movies are correctly formatted for a MongoDB _id key, use the joi-objectid package.
+https://www.npmjs.com/package/joi-objectid
+
+I can pass that validation into the "rental.js" model module, inside of the validate rental function.
+To use the Joi.objectId method that I construct, just use it like I would any Joi validator.
+In this case, I replace Joi.string() with Joi.objectId()
+
+const Joi = require("@hapi/joi");
+Joi.objectId = require("joi-objectid")(Joi); //The require returns a function, so pass Joi const into it, it then again returns a function so we set Joi.objectId equall to it.
+const mongoose = require("mongoose");
+
+function validateRental(rental) {
+  const schema = Joi.object({
+    customerId: Joi.objectId().required(),
+    movieId: Joi.objectId().required()
+  });
+
+  return schema.validate(rental);
+}
+
+
+And to make this work in my Rentals.js I change my create script instead of being a try/catch block (which wasn't really working properly anyway) back into a 
+const that it checks against. This allows it to properly pass on the error message to the client.
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected Format { "customerId": "string" "movieId": "string" }
+
+router.post("/", async (req, res) => {
+  // Having the error set up this way allows the error message to pass on correctly, in the prior way I set it up in a try/catch block it wasn't being passed on.
+  const { error } = validateRental(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+	...
+
+
+When submitting this POST request in postman:
+{ "customerId": "5e602d82e051ec2be801c4fa", "movieId": "1234" }
+
+I get:
+"movieId" with value "1234" fails to match the valid mongo id pattern
+
+
+**** A BETTER IMPLEMENTATION ****
+
+Back in rental.js it is likely that I'll use this method in other places like in the customer or movie module.
+I don't want to re-define this objectId method in every module.
+
+So, on top of the file where I define the method. I'll move this to index.js so I load it once and can use it elsewhere. It will also require loading Joi there.
+Now Joi.objectId is defined in index.js and nowhere else.
+
+One more change, in movie.js:
+In the validateMovie function, when I create a movie I need to pass a valid genreId. So replace Joi.string() with Joi.objectId()
+
+Also, in customers.js in the below code:
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected input format: {"name": "string", "phone": "stringOfNumbers", "isGold": "bool"}
+
+router.post("/", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    let customer = new Customers({
+      name: req.body.name,
+      phone: req.body.phone,
+      isGold: req.body.isGold
+    });
+    customer = await customer.save();
+    res.send(customer);
+  } catch (ex) {
+    res.status(500).send(ex.message);
+  }
+});
+
+I'm resetting the customer variable after saving it to the database. This is purely to demonstrate that the save method returns a customer document and it wasn't to distract me with 
+too much detail about how objectId's work.
+So, with that done I can remove the setting customer on save and by consequence can change the "let" to a "const"
+
+router.post("/", async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    const customer = new Customers({
+      name: req.body.name,
+      phone: req.body.phone,
+      isGold: req.body.isGold
+    });
+    await customer.save();
+    res.send(customer);
+  } catch (ex) {
+    res.status(500).send(ex.message);
+  }
+});
