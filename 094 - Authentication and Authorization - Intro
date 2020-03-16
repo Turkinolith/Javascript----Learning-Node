@@ -1,0 +1,44 @@
+******************************************
+**** Authentication and Authorization ****
+******************************************
+
+So far in the vidly app I've built the api endpoints for:
+/api/genres
+/api/movies
+/api/customers
+/api/rentals
+
+Nearly all apps require some sort of Authentication and Authorization. In this section I'll implement A&A.
+
+```````````````````````````````````````````````````````````````````````````````````````````````````
+Authentication is the process of identifying if the user is who they claim they are.
+
+Authorization is determining if the user has the right permission to perform the given action.
+```````````````````````````````````````````````````````````````````````````````````````````````````
+
+So in the vidly app I want to make sure only authenticated (logged in) users can perform actions that can modify data.
+So, if the user is anon, not logged in, they can only read data from the endpoints.
+If they want to add data or edit one, they have to be logged in use.
+A 2nd layer of Authorization is that only users who have "admin" rights can delete data. Now I'm talking about permissions.
+
+To do this, I'll need to add 2 new endpoints to the app.
+First I should be able to Register users. So I need to make and endpoint for that
+	Register: POST /api/users
+	
+Second I should also be able to login a user and thats used for authentication.
+	Question: What HTTP Method is used to implement Login?
+		I'm not creating a new resource, I'm not modifying or deleting one, how to implement this in RESTful terms?
+			Sometimes the operation you are dealing with doesn't have the CRUD semantic. To modle this in RESTful terms its refer it as a request or command.
+			So its creating a new login request or command so we use POST.
+			In my app I may want to store all the logins within a seperate collection within MongoDB. so using POST makes perfect sense here.
+	Login: POST /api/logins
+	
+
+Exercise: 
+	Implement the POST /api/users, for each user they need these properties: {name, email, password}
+		Also when defining the schema, for the email property set the unique property to "true"
+			email: {
+				type: String,
+				unique: true
+				}
+
