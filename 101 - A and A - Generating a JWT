@@ -1,0 +1,57 @@
+***********************************
+**** Generating Authentication ****
+***********************************
+npm i jsonwebtoken
+
+In auth.js before returning the response to the client I need to create a new JSON web token.
+
+Import the module and store it in a constant called jwt.
+
+Call the sign method on the jwt object. it takes a payload which can be a simple string or an object. The properties of the object are entirely up to us.
+	In this case I'll assign it an object with a single property: _id. For its value I'll set that to user._id which I'll have set earlier in the router.post function.
+	
+		jwt.sign({ _id: user._id }, );
+	
+	That is the payload, as the second argument I need to specify the secret or private key that is used to create the digital signature.
+	For example I'll hardcode a private key ***DON"T DO THIS IN A REAL APPLICATION!!***
+	
+		**EXAMPLE: DON"T HARDCODE KEYS LIKE THIS!!**
+			jwt.sign({ _id: user._id }, "jwtPrivateKey");
+		
+	As a result of running the sign method I'll get a token.
+		const token = jwt.sign({ _id: user._id }, "jwtPrivateKey");
+	
+	Now I can return the token to the client.
+		res.send(token);
+		
+		or even: 
+			res.send(jwt.sign({ _id: user._id }, "jwtPrivateKey"));
+		
+
+TESTING:
+	in postman I send a post request to http://localhost:3000/api/auth with a valid email and password.
+
+Returns: 
+	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZTcwMjA1YjczMmExZTU4YzBmNTBjNjMiLCJpYXQiOjE1ODQ0ODM2NjV9.4DPyR2r5KQVU2tky5bUO1NOytCu__7GYRHCFg2eLK6Y
+
+In jwt.io the above JWT decodes as:
+Header -
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+Payload - 
+{
+  "_id": "5e70205b732a1e58c0f50c63",
+  "iat": 1584483665
+}
+	**Note: iat is the time in a unix timestamp that the token was created, using it can determine the age of a JWT.
+Signature -
+HMACSHA256(
+  base64UrlEncode(header) + "." +
+  base64UrlEncode(payload),
+  jwtPrivateKey
+  )
+
+And now if I check my database, I can see that the _id field correctly matches the user object in the database for the verified user!
+
