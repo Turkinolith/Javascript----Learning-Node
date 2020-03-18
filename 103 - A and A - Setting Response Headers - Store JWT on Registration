@@ -1,0 +1,59 @@
+**********************************
+**** Setting Response Headers ****
+**********************************
+
+In my current implementation of auth.js, when a user logs in I generate a JSON web token and return it in the body of the response.
+
+Now lets imagine that when a user registers I want to assume they are logged in so they don't have to log in separately.
+This isn't always true. Sometimes you want to enforce the user to verify an email address so you send them an email and they click a link. In such case the process is different.
+
+In this case lets imagine that Vidly is an application that runs locally within a store so people who use it are people who work in the store and we don't have to verify their address.
+So their first day they create an account and their insta-logged in.
+
+#1 
+Lets go to users.js and look at the bottom of the post method.
+In my response there I'm returning a selectively picked object with the properties of _id, name, and email.
+
+I could add the JWT here as another property, but thats a bit ugly because the JWT is not a property of a user.
+
+A better approach is to return the JWT as an HTTP header.
+Just like we have headers in requests, we also have headers on response objects.
+
+#2
+Lets go back to auth.js and copy the line of code where the token is generated.
+
+#3
+Back in users.js before I send the post response, lets generate the token.
+paste the code
+	const token = jwt.sign({ _id: user._id }, config.get("jwtPrivateKey"));
+
+#4
+now I can call response with the header method. With this I can set a header.
+	res.header
+
+#5 
+For any custom headers that I define in my app I should prefix them with "x-" then an arbitrary name.
+	res.header('x-auth-token')
+This is the first argument.
+
+#6
+For the second argument I pass in the value for the "key" I just set in the first argument.
+	res.header('x-auth-token', token)
+
+#7
+Now append the rest of the post response in dot notation to it.
+
+    const token = jwt.sign({ _id: user._id }, config.get("jwtPrivateKey"));
+    res.header('x-auth-token', token).send(_.pick(user, ["_id", "name", "email"]));
+
+So now I set the header then send the response to the client.
+
+
+TESTING:
+I'll use my previously saved "Register User" option to test creating a user.
+I'll change the email to something new that wasn't already used.
+Send, on return I get the expected body of the response.
+On the headers tab in Postman I can see extra data
+In that data I see x-auth-token - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZTcxYzY3ODNmMzhiYjU4OGM5OWNjYzAiLCJpYXQiOjE1ODQ1MTQ2ODB9.f2Kb-UDFzWdxub4KGp2OiwEt2LJ_j2zRA1_miP6hu7s
+
+In the client app when I register a user I can read the header, store the JWT on the client, and next time I need to make an API call can send that token to the server.
