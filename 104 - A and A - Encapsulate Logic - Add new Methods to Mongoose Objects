@@ -1,0 +1,97 @@
+************************************************
+**** Encapsulating Logic in Mongoose Models ****
+************************************************
+The problem with the application right now is that in the post method of the users module and the auth module I have the 
+exact same code that generates a JWT.
+	const token = jwt.sign({ _id: user._id }, config.get("jwtPrivateKey"));
+
+The payload of the JWT currently only has the _id property.
+Chances are, that at some point I'll add another property to the payload. Mabe the users email, mabe their role, know if their an admin or not?
+
+With this implementation every time I change this payload I have to remember to go to the other instance and make the same exact change.
+In the long run we're going to forget about these requirements.
+So, here I'll go over how to encapsulate the logic in a single place.
+
+
+Where should the logic be moved to?
+
+An amateur would think, lets make a function to generate a token, put this somewhere we can reuse like in another module I can import into
+both the auth and users modules. Then I'll have the logic within a single place.
+This is true, it works. but with this approach I'll have a lot of functions hanging all over the place.
+
+In Object Oriented Programming there is a principle called:
+````````````````````````````````
+* Information Expert Principle *
+````````````````````````````````
+It means an object that has enough information and is an expert in a given area, that object should be responsible 
+for making decisions and performing tasks.
+	IE: A chef knows about cooking at a restaurant. Thats why the responsibility of cooking is performed by the chef, 
+	not a waiter who doesn't know enough about cooking at the restaurant.
+
+Taking that principle lets apply it to the code.
+
+	const token = jwt.sign({ _id: user._id }, config.get("jwtPrivateKey"));
+
+Here as part of creating the token, what do we need in the payload? The ID of the user. What may we add to it? The user email or status.
+Where is all that data coming from? The user object.
+So its the user object that should be responsible for generating the authentication token.
+So, the function to create the JWT shouldn't be hanging somewhere in a module. It should be a user object method.
+
+So, I need to add the function to generate the JWT as a method to the user object.
+
+*****************************
+ADDING A METHOD TO AN OBJECT 
+*****************************
+	user.generateAuthToken();
+
+And this will give us a token object as it currently does. 
+	const token = user.generateAuthToken();
+	
+How to add this?
+Go to the module where we define the user model and make the change there.
+
+#1 -
+	Go to user.js
+	
+#2 -
+	If I have not already extracted the schema into a constant, do so. In this case I have already as userSchema.
+	
+#3 - 
+		userSchema.methods
+	This returns an object, I can add additional key/value pairs in this object.
+		userSchema.methods.generateAuthToken = function () {}
+		
+	When we do this, our user object will have a method called generateAuthToken.
+	I can also add parameters so that when I call the method I can pass arguments, but in this case I don't need any.
+		
+	So, at this point I just copy the token logic from before and move it inside of this new method.
+
+		userSchema.methods.generateAuthToken = function() {
+		  const token = jwt.sign({ _id: user._id }, config.get("jwtPrivateKey"));
+		}
+
+	So, here in the payload I need to get the _id of the user object. How will I get that?
+	This method will be part of the user object so in order to reference the object itself I use "this"
+
+		//* Attach the creation logic for a Token as a method on the user object
+		userSchema.methods.generateAuthToken = function() {
+		  const token = jwt.sign({ _id: this._id }, config.get("jwtPrivateKey"));
+		  return token;
+		};
+		
+	*NOTE: Using "this" like this requires normal function declaration like above. Can't use an arrow function as it doesn't 
+	have their own "this". "this" in an arrow function references the calling function.
+	If you are making a method that is part of an object you should not use an arrow function.
+
+#4 -
+	Back in the auth module
+	replace the logic for generating the token with a call to the user object.
+		const token = user.generateAuthToken();
+		
+#5 -
+	And the same change in the users module.
+
+
+TEST:
+Go and create a new post to register a user and I successfully get the auth token!
+
