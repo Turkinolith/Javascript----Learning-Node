@@ -1,0 +1,83 @@
+***********************************************
+**** Storing Environment Variables in Node ****
+***********************************************
+Using the node package "config" Using it I can store the configuration settings of the app in JSON files or in environment-variables.
+
+Using this I'll take the jwtPrivateKey out of the hardcoded jwt.sign() method because I should never store those keys in the codebase.
+
+#1 - npm i config
+
+#2 - Now I'll make a new folder called "config"
+
+#3 - Within the config folder I'll make a new default configuration file: default.json
+
+#4 - Make a normal json object within the file. I'll add more settings to it later but for now lets just have "jwtPrivateKey". For now set this to an empty string. the key won't reside here.
+	This is simply setting a template for the settings in this file.
+	
+	{
+	  "jwtPrivateKey": ""
+	}
+
+#5 - Also in the config folder make a new file: "custom-environment-variables.json"
+	This file will have the mapping between the app settings and environment-variables.
+
+#6 - In the custom-environment-variables file what we want is something like this
+	{
+	 "jwtPrivateKey": "jwtPrivateKey"
+	}
+
+**IMPORTANT NOTE** BUT I should prefix the value with an app-name, because the environment-variables must be unique and I don't want any other jwtPrivateKey values to overwrite this one.
+
+	So it turns into:
+	{
+	 "jwtPrivateKey": "vidly_jwtPrivateKey"
+	}
+
+
+
+#7 - back in Auth.js I import the config module
+	const config = require('config');
+	
+#8 - In the jwt.sign method I replace the hardcoded private key with a config.get and pass the value of the application setting. in this case "jwtPrivateKey"
+	now jwtPrivateKey is no longer a secret, its the name of the application setting. The actual secret will be within an environment variable.
+	
+	    const token = jwt.sign({ _id: user._id }, config.get('jwtPrivateKey'));
+
+#9 - Now, I want to make sure that the environment variable is set when the application is ran. Otherwise it should terminate the application because the authentication endpoint
+	can not function properly.
+	
+	So, back in index.js I load the config module.
+		const config = require("config");
+	
+	Now I get the name of the application setting:
+		config.get('jwtPrivateKey')
+	
+	if this is not defined, log a fatal error. 
+		if (!config.get('jwtPrivateKey')) {
+		  console.error("FATAL ERROR: jwtPrivateKey is not defined.");
+		}
+	
+	Next, I'll need to exit the process.
+	Earlier I learned about the process object, one of the global objects in node.
+	There is a method called "exit" which takes a code as an argument.
+	"0" = success
+	Anything other than "0" = failure.
+	
+		if (!config.get('jwtPrivateKey')) {
+		  console.error("FATAL ERROR: jwtPrivateKey is not defined.");
+		  process.exit(1);
+		}
+
+TESTING:
+Without having set the environment-variable when I run index.js:
+FATAL ERROR: jwtPrivateKey is not defined.
+
+#10 - Set the environment-variable
+	Mac - export keyname=value
+	Windows - set keyname=value
+
+IE: set vidly_jwtPrivateKey=DevelopmentMachineKey1
+
+***NOTE: If I set the environment-variable in a command line OTHER than the one I'm running the application from, it won't read the environment-variable properly.
+
+Now if I go back to postman and send the post request with a valid email/password I get a new JWT, I can go to jwt.io, put in my private key and verify that the JWT matches it.
