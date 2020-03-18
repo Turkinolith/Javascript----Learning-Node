@@ -1,0 +1,53 @@
+***************************
+**** Protecting Routes ****
+***************************
+
+Now that I have a middleware function I can now go into index.js where I'm applying middleware functions (the app.use block)
+
+	**ORDER OF OPERATIONS MATTERS**
+So, I can add it there and it'll be executed before the route handlers.
+But, I don't want to do this because not all API endpoints should be protected, some should be public like registering a user, logging in, getting the list of genres, or of customers.
+In this case I want to apply this endpoint protection selectively to certain endpoints.
+
+Back to genres.js
+In the POST route handler, the first argument is the route '/', the second is optionally middleware, and the 3rd will be the actual route handler.
+
+#1 -
+	Import the auth middleware.
+	
+		const auth = require('../middleware/auth')
+	
+#2 - 
+	add auth as a middleware to be executed before the route handler for the POST function.
+
+	router.post("/", auth, async (req, res) => {
+	  const { error } = validate(req.body);
+	  if (error) return res.status(400).send(error.details[0].message);
+
+	  try {
+		let genre = new Genres({ name: req.body.name });
+		genre = await genre.save();
+		res.send(genre);
+	  } catch (ex) {
+		res.status(500).send(ex.message);
+	  }
+	});
+
+TEST:
+	Attempting to send a POST request without a configured header now returns:
+	(status: 401 Unauthorized)
+		"Access denied. No token provided."
+
+	Attempting to send a POST with an INVALID token now returns:
+	(status: 400 Bad Request)
+		"Invalid token."
+	
+	Attempting to send a POST with a VALID token (see notes in saved POSTMAN file) now returns 200 OK!
+	
+		{
+			"_id": "5e7282d053300e660c79fbc5",
+			"name": "Sci-Fi/Fantasy",
+			"__v": 0
+		}
+	
+EXERCISE: APPLY THIS MIDDLEWARE TO OTHER ROUTE HANDLERS THAT MODIFY DATA.
