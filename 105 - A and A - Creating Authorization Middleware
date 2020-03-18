@@ -1,0 +1,142 @@
+**********************************
+**** Authorization Middleware ****
+**********************************
+In genres.js the post method should only be called by an authenticated user.
+How to enforce this?
+
+#1 -
+	Need to read the request header. I expect a JSON web token stored in the header.
+		const token = req.header('x-auth-token')
+
+#2 - 
+	Need to validate the token, if valid then give access to this API endpoint.
+	Otherwise, return a response like this.
+		**NOTE** Status 401 is declined - client doesn't have credentials to access resource.
+		res.status(401)
+
+This is the big picture, but I don't want to have to repeat this logic at the beginning of every route handler that modifies data.
+So, this logic needs to be put within a middleware function.
+
+`````````````````````````````````
+How to make a Middleware function
+`````````````````````````````````
+#1 - 
+	Create a folder called middleware
+	
+#2 - 
+	Make a new file in middleware called auth.js
+	
+#3 -
+	Within auth.js define a function that takes 3 parameters, request, response, and next which is used to pass control to the next function
+	in the middleware pipeline.
+	
+		function auth(req, res, next)
+	
+#4 -
+	Now lets paste in the logic from above.
+		const token = req.header('x-auth-token')
+		res.status(401)
+
+#5 -
+	Chances are, if there isn't a token we need to handle that, so lets fill it out:
+	
+		function auth(req, res, next) {
+		const token = req.header('x-auth-token');
+		if (!token) res.status(401).send('Access denied. No token provided.')
+	}
+
+This helps the client figure out why they can't access the resource.
+
+#6 -
+	If there is a token, now I need to validate it and ensure that it is a valid one.
+	
+		const jwt = require('jsonwebtoken')
+		const config = require('config')
+
+		function auth(req, res, next) {
+			const token = req.header('x-auth-token');
+			if (!token) res.status(401).send('Access denied. No token provided.')
+
+			
+			const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+		}
+	
+#7 -
+	The verify function will decode it and return the payload if the JWT is valid.
+	If the JWT is NOT valid, it will return an exception. So I need to wrap the whole expression in a try/catch block.
+	For the response if it is NOT valid I should return a 400 error, because the client is not sending the right data.
+	
+		function auth(req, res, next) {
+		const token = req.header('x-auth-token');
+		if (!token) res.status(401).send('Access denied. No token provided.')
+
+		try {
+			const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+			
+		} catch (ex) {
+			res.status(400).send('Invalid token.');
+		}
+	}
+
+#8 -
+	Back to the try block, if the JWT is valid we get the decoded payload, so now I can put that in the request.
+	Get the user object from the request and set it equal to the payload.
+		req.user = decoded;
+		
+	Earlier when I added the token generation into the user object I set the payload object to be the user _id.
+		{ _id: this._id }
+	So, when I decode it that is the object I'll get.
+	
+	`````````````````````````````````````````````````````````````
+	Note in the route handler I can access the data if I want to.
+		req.user._id
+	`````````````````````````````````````````````````````````````
+	
+	So in the try block I set req.user and now I need to pass control to the next middleware function in the pipeline
+		next();
+	
+Like mentioned before, with middleware functions we either terminate the request response lifecycle or pass control to the next function.
+
+So, there is a tiny change that needs to be made.
+
+in the "if (!token)" line, I want to make sure that the function exits if there isn't a token found, so lets return from it.
+With this I'm done with this middleware function, now just export it.
+
+	const jwt = require('jsonwebtoken')
+	const config = require('config')
+
+	function auth(req, res, next) {
+		const token = req.header('x-auth-token');
+		if (!token) return res.status(401).send('Access denied. No token provided.')
+
+		try {
+			const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+			req.user = decoded;
+			next();
+
+		} catch (ex) {
+			res.status(400).send('Invalid token.');
+		}
+	}
+
+	module.exports = auth;
+
+*** Exports Shortcut ***
+A shortcut is to set the exports right on the function declaration line.
+module.exports = function, it doesn't need a name there, then can get rid of the exports line.
+
+	const jwt = require("jsonwebtoken");
+	const config = require("config");
+
+	module.exports = function(req, res, next) {
+	  const token = req.header("x-auth-token");
+	  if (!token) return res.status(401).send("Access denied. No token provided.");
+
+	  try {
+		const decoded = jwt.verify(token, config.get("jwtPrivateKey"));
+		req.user = decoded;
+		next();
+	  } catch (ex) {
+		res.status(400).send("Invalid token.");
+	  }
+	};
