@@ -1,0 +1,62 @@
+**********************************
+**** Getting the Current User ****
+**********************************
+
+In a lot of apps there are times where we need to get info about the current logged in user.
+In this I'll add a new API endpoint for getting the current user.
+
+In the users module.
+Currently there is only the POST route handler there for creating a new user.
+
+Now, I could add a router.get and handle it like I do others, but for security reasons that may not be a good idea.
+Why? because if I do router.get('/:id') I could just throw ID#'s at it till I get a users ID# correct and I'd be able to see info about them
+that I probably shouldn't.
+
+```````````````
+ getting "/me"
+```````````````
+So the approach used often to get info on the user is to use an API endpoint router.get('/me')
+With this, the client is not going to send a user ID. We get it from the JSON webtoken.
+
+	router.get('/me', async (req, res) => { })
+
+
+This API endpoint should only be available to authenticated users, so lets also add the auth middleware.
+	router.get('/me', auth, async (req, res) => { })
+With this, if the user doesn't have permission, then the request never gets to the req/res part of the function.
+
+Since the auth function returns an object that has the user ID loaded from the database and it is passed as req.user._id, I can now get it from there, so the client never has to send the 
+user ID directly as long as they have their token. This is a more secure approach.
+
+So, I want to find the user by the ID, so I simply pass the result I can now access like so:
+	router.get('/me', auth, async (req, res) => {
+	  const user = await Users.findById(req.user._id);
+	});
+
+Now, I don't want to return the users password to the client, so I'll exclude the password key/value, I could exclude other things as well
+like address or credit card #.
+
+	router.get('/me', auth, async (req, res) => {
+	  const user = await Users.findById(req.user._id).select('-password');
+	});
+
+and finally, I send this to the client.
+	router.get('/me', auth, async (req, res) => {
+	  const user = await Users.findById(req.user._id);
+	  res.send(user);
+	});
+
+
+TEST:
+	Send a test with no token:
+	returns:
+		401 - Access denied. No token provided.
+	
+	Send a false token:
+	returns:
+		400 - Invalid Token
+	
+	Send a valid token:
+	Returns:
+		200 - { user object w. _id, name, email }
+		
