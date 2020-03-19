@@ -1,0 +1,15 @@
+****************************
+**** Logging Out a User ****
+****************************
+In the auth module I defined a route for authenticating users.
+What about logging out users? Do I need a separate route?
+
+No, because we're not storing the token anywhere on the server.
+
+This would need to be implemented on the client, not the server, and they would simply delete the token from the client.
+If you absolutely have to have the token in the DB, it should be hashed, just like the password.
+
+Best to avoid storing the token on the server at all.
+
+Also whenever sending the token from client to server, make sure to use HTTPS so that the data is encrypted between the 
+client and the server.
