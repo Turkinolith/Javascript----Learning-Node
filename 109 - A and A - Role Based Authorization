@@ -1,0 +1,76 @@
+**********************************
+**** Role Based Authorization ****
+**********************************
+So far I've implemented authentication and authorization, but lets take it to the next level.
+Lets imagine that certain operations such as deleting data can only be performed by admins.
+Lets implement role-based authorization!
+
+
+#1 - Go to the user model
+	There I have the user schema where I currently have 3 values, [name, email, password]
+	Now I'll add another property, isAdmin of type Boolean.
+		*NOTE: I'm not adding this to the Joi pre-validation. Declaring isAdmin or not should not be a question during user creation.
+	
+#2 - Now I'll pick a user account out of the DB and make it an admin.
+	Now, when the user logs in I want to include the "isAdmin" property within their JWT payload so that next time they log in and get the token I can extract that property directly from 
+	the token. I don't have to get the ID, go to the DB and see if their an admin or not.
+	
+#3 - Back in user.js, when I generate the auth token I want to include this property inside the payload.
+		const token = jwt.sign({ _id: this._id, isAdmin: this.isAdmin }, config.get("jwtPrivateKey"));
+		
+	*NOTE: This is the benefit of encapsulating the information in a single location. I only have to edit this one spot to change it instead of in 2 locations.
+
+#4 - Now on the server I need a new middleware function to check if the current user is an admin or not.
+	In the middleware folder add a new file: admin.js
+
+#5 -	I'll set it immediately to be an exported function, it takes request, response and a reference to the next middleware function as arguments.
+		Here I'll assume that it is executed after the auth middleware. 
+		The auth middleware sets req.user so I can access it here.
+			if req.user.isAdmin
+		Or rather, if not.
+			if (!req.user.isAdmin) I'll return status 403, which means forbidden.
+
+** Difference between 401 and 403 **
+401 - Unauthorized - When try to access protected resource but doesn't supply valid JWT. You can try again.
+403 - Forbidden - Valid JWT but not allowed. Don't bother trying again.
+
+Code for admin.js middleware.
+
+module.exports = function(req, res, next) {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied.");
+
+  next();
+};
+
+
+** Using the middleware **
+in genres.js lets use the middleware on the delete method.
+
+I already have the auth method there, so to pass multiple middleware functions I pass an array with the 2 middleware functions arranged sequentially.
+	router.delete("/:_id", [auth, admin], async (req, res) => { }
+
+So, first it'll do the auth middleware, if that passes then it'll do the admin middleware, then finally it'll do the route handler.
+
+
+TESTING:
+	Test with a user who is not logged in, expect a 401 Unauthorized error.
+		Verified
+	
+	Test with a user who is logged in, but not an admin. Expect a 403 error.
+		Verified
+		
+	Test with a user who is logged in with an admin role set. Expect 200.
+		Verified, able to delete.
+
+NOTE: This expects a single property to determine if a user is an admin or not. You may have multiple roles in an app like Admin, moderator, so on.
+	In such a case you would need a property like "roles" that is an array where we can either have strings or complex objects.
+	
+	In a more complex application instead of managing roles I'd manage operations. That is the operations that a user is allowed to perform.
+	So I'd have:
+		operations: []
+	This would be an array of complex objects. For example for a given user I could say: This user is allowed to delete genres, or create genres.
+	So I'd control access at a more granular level.
+	Regardless of how granular I get, the big picture is the same. I'd pass something that determines the level of access of the user. THen I'd add a middleware, in this case I'm checking a bool property but
+		in a more complex application I could check an operations array, or a roles array, based on that make a decision either decline access or grant it.
+	
+	
