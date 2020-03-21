@@ -1,0 +1,19 @@
+*************************************
+**** Handling and Logging errors ****
+*************************************
+
+As a best practice, account for unexpected situations:
+	#1 - send a error message to the client
+	#2 - log the exception on the server so you can later review the log
+
+Example:
+	Have everything running, but close the mongoDB server.
+	When, in postman, you run a get request, after 30 seconds you will get in the node terminal:
+		unhandledPromiseRejectionWarning: unhandled promise rejection: MongoNetworkError: failed to reconnect after 30 attempts with interval 1000 sm
+		depricationWarning: unhandled promise rejections are deprecated. in the future, promise rejections that are not handled will terminate the Node.js process
+		with a non-zero exit code.
+		
+	So, lets say the MongoDB goes down for 1 minute. Even after that minute in the current implementation the node process will go down and it will not be able to handle
+	customers even after mongoDB comes back up.
+	
+	So I need to properly handle this scenario.
