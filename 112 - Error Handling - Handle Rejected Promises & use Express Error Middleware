@@ -1,0 +1,77 @@
+************************************
+**** Handling Rejected Promises ****
+************************************
+
+If you are using promise syntax with:
+.then(), always have a .catch()
+Similarly if you are using async /await always use a try/catch block.
+
+**********************************
+**** Express Error Middleware ****
+**********************************
+In the implementation I currently have, with using a try/catch block for each function, if I want to change the error message I'll have to go to each block and edit the message there directly.
+Also I need to log the exception, I'll have to go to several route handlers and log the change.
+
+To move this logic to somewhere central:
+
+#1 - Index.js find the block where I'm registering all of the middelware functions (IE: the app.use block)
+	In Express there is a special middleware function called "error middleware" it's registered after all other existing middleware.
+
+	app.use(function(err, req, res, next){
+	
+	});
+
+Now, inside of this function, I add all of the logic for handling errors in the app.
+	Can put in it "res.status(500).send("Something Failed.");
+
+Then in the spot where I noramlly would have this error logic, I'll put a pass controll to that error handling middelware function.
+To do that I add a new parameter (next) 
+Then in the catch block:
+	next(ex)
+
+Example:
+	router.get("/", async (req, res, next) => {
+	  try {
+	    // do stuff
+	  }
+	  catch (ex) {
+	    next(ex);
+      }
+	});
+
+Then, back in index.js, since the error handler is called "AFTER" all of the other middleware, it picks up where the others leave off and the exception becomes the first argument for its function.
+
+Since the details on how these things work should be in their own module, you can now move this into its own module.
+error.js
+
+and set module.exports to equall the function.
+
+and in index.js load the module
+Then call the app.use and pass the error handling function.
+Note, don't call it, just pass a reference.
+
+
+
+error.js in middleware:
+	module.exports = function(err, req, res, next) {
+	  //TODO log the exception
+	  res.status(500).send("Something Failed.");
+	};
+
+index.js lines:
+	const error = require("./middleware/error");
+	// ...
+//* Error Handling, always comes after other routes.
+	app.use(error);
+
+change of method in genres.js:
+	router.get("/", async (req, res, next) => {
+	  try {
+		const genres = await Genres.find().sort("name");
+		res.send(genres);
+	  } catch (err) {
+		next(ex);
+	  }
+	});
+
+All of the try/catch blocks are getting repetitive, so I'll go over how to remove those next.
