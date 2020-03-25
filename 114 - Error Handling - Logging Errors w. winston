@@ -1,0 +1,293 @@
+************************
+**** Logging Errors ****
+************************
+
+Here is the error middleware I wrote before:
+	module.exports = function(err, req, res, next) {
+	  //TODO log the exception
+	  res.status(500).send("Something Failed.");
+	};
+
+Like mentioned then, I need to log the exceptions that are thrown.
+
+To do this I'll use the popular logging library "Winston"  npm i winston
+
+
+
+** TRANSPORTS **
+The logger object has what we call a "Transport" (also referred to as a "log channel")
+A transport is a storage device for the logs.
+
+It comes with a few core transports:
+console - for logging messages to console.
+File - 
+Http - For calling an HTTP endpoint for logging messages.
+
+**NOTE: For winston 3.0 they have removed winston.transports.[file, console, http] formatting options.
+
+
+There are also plugins for winston, other NPM modules for logging messages in:
+MongoDB
+CouchDB - another nosql db
+Redis
+Loggly - a popular log analysis and monitoring service for enterprise applications.
+
+
+That determines the importance of the message I'll log. 
+	** LOGGING LEVELS **
+0- error - most important
+1- warn
+2- info - for storing info in the log like "connected to mongo db", this is not exceptions or errors, but information about the application.
+3- verbose
+4- debug - for storing debug information.
+5- silly
+
+I can either pass the logging level as an argument and then set the message:
+	winston.log('error', err.message)
+Or, I can use one of the helper methods so I don't have to pass the argument:
+	winston.error(err.message)
+
+Optionally I can also store meta-data. I can pass an error object and every property of that error object will also be stored in the log.
+	winston.error(err.message, err);
+
+
+Here is a quick way to log with winston outputting to console. Note that it is using the "info" level
+
+	const winston = require('winston');
+
+	// Logger configuration
+	const logConfiguration = {
+		'transports': [
+			new winston.transports.Console()
+		]
+	};
+
+	// Create the logger
+	const logger = winston.createLogger(logConfiguration);
+
+	// Log a message
+	logger.log({
+		message: 'Hello, Winston!',
+		level: 'info'
+	});
+	// Log a message
+	logger.info('Hello, Winston!');
+
+
+I can also output to a log file as in this example. in this case it outputs to a file located in the /logs/ folder located in the app directory.
+	const winston = require('winston');
+
+	// Logger configuration
+	const logConfiguration = {
+		'transports': [
+			new winston.transports.File({
+				filename: './logs/example-2.log'
+			})
+		]
+	};
+
+	// Create the logger
+	const logger = winston.createLogger(logConfiguration);
+
+	// Log a message
+	logger.info('Hello, Winston!');
+	
+	
+I can also have multiple transports active at the same time and at different logging levels.
+
+	const winston = require('winston');
+
+	// Logger configuration
+	const logConfiguration = {
+		transports: [
+			new winston.transports.Console({
+				level: 'verbose'
+			}),
+			new winston.transports.File({
+				level: 'error',
+				filename: './logs/example-3.log'
+			})
+		]
+	};
+
+	// Create the logger
+	const logger = winston.createLogger(logConfiguration);
+
+	// Log some messages
+	logger.silly('Trace message, Winston!');
+	logger.debug('Debug message, Winston!');
+	logger.verbose('A bit more info, Winston!');
+	logger.info('Hello, Winston!');
+	logger.warn('Heads up, Winston!');
+	logger.error('Danger, Winston!');
+
+
+I can also separate up the winston configuration. In this example I move the configuration settings to winston-config.js located in the config folder and import the settings into error.js
+
+````````````````````winston-config.js````````````````````````````
+
+	const winston = require("winston");
+
+	//* Logger configuration
+	//* 0- error
+	//* 1- warn
+	//* 2- info
+	//* 3- verbose
+	//* 4- debug
+	//* 5- silly
+	//* level shows the level for the error to be sent to that pipeline
+	//*  IE: warn and above goes to log, errors also go to console
+	const logConfiguration = {
+	  transports: [
+		new winston.transports.File({
+		  level: "warn",
+		  filename: "./logs/logfile.log"
+		}),
+		new winston.transports.Console({ level: "error" })
+	  ]
+	};
+
+	module.exports = logConfiguration;
+
+
+```````````````````error.js```````````````````````````
+
+	const winston = require("winston");
+	const logConfiguration = require("../config/winston-config");
+
+	// Create the logger
+	const logger = winston.createLogger(logConfiguration);
+
+	// Catch-all error response/logger
+	module.exports = function(err, req, res, next) {
+	  logger.error(err.message, err);
+	  res.status(500).send("Something Failed.");
+	};
+
+
+***** Log Format *****
+https://github.com/winstonjs/logform
+
+By default winston logs in JSON format.
+	{"message":"Test genre error","level":"error"}
+
+If I attach an error object to the log, it prints out like this with the stack trace attached.
+{"level":"error","message":"Test genre errorTest genre error","stack":"Error: Test genre error\n    at D:\\Node_tutorial\\vidly-backend\\routes\\genres.js:32:9\n    at newFn (D:\\Node_tutorial\\vidly-backend\\node_modules\\express-async-errors\\index.js:16:20)\n ...}
+
+To change the log format I make a "format" parameter in the winston configuration.
+
+If I want a single format adjustment I can put it next to the paramter.
+	format: winston.format.timestamp()
+
+If I want multiple format options, I must enclose them in the winston.format.combine() method.
+	  format: winston.format.combine(
+		winston.format.timestamp(),
+		winston.format.prettyPrint()
+	  )
+
+With both the timestamp and prettyprint options selected an error looks like this *Note this is not a valid JSON format*:
+{
+  level: 'error',
+  message: 'Test genre errorTest genre error',
+  stack: 'Error: Test genre error\n' +
+    '    at D:\\Node_tutorial\\vidly-backend\\routes\\genres.js:32:9\n' +
+    '    at newFn (D:\\Node_tutorial\\vidly-backend\\node_modules\\express-async-errors\\index.js:16:20)\n' +
+    '    at Layer.handle [as handle_request] (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n' +
+    '    at next (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\route.js:137:13)\n' +
+    '    at Route.dispatch (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\route.js:112:3)\n' +
+    '    at newFn (D:\\Node_tutorial\\vidly-backend\\node_modules\\express-async-errors\\index.js:16:20)\n' +
+    '    at Layer.handle [as handle_request] (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n' +
+    '    at D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:281:22\n' +
+    '    at Function.process_params (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:335:12)\n' +
+    '    at next (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:275:10)\n' +
+    '    at Function.handle (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:174:3)\n' +
+    '    at router (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:47:12)\n' +
+    '    at newFn (D:\\Node_tutorial\\vidly-backend\\node_modules\\express-async-errors\\index.js:16:20)\n' +
+    '    at Layer.handle [as handle_request] (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n' +
+    '    at trim_prefix (D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:317:13)\n' +
+    '    at D:\\Node_tutorial\\vidly-backend\\node_modules\\express\\lib\\router\\index.js:284:7',
+  timestamp: '2020-03-25T19:52:24.986Z'
+}
+
+I can colorize the log format, it requires an additional object to configure it.
+Also the colorize must be BEFORE the entry you want to be colorized.
+
+	This works:
+		  format: winston.format.combine(
+			winston.format.timestamp(),
+			winston.format.colorize(),
+			winston.format.json()
+		  )
+	
+	This ** WILL NOT WORK ** :
+	  format: winston.format.combine(
+		winston.format.timestamp(),
+		winston.format.json(),
+		winston.format.colorize()
+	  )
+
+
+I can format the logs separately for each transport type:
+
+	const logConfiguration = {
+	  transports: [
+		new winston.transports.File({
+		  level: "warn",
+		  filename: "./logs/logfile.log",
+		  format: winston.format.combine(
+			winston.format.timestamp(),
+			winston.format.json()
+		  )
+		}),
+		new winston.transports.Console({
+		  level: "error",
+		  format: winston.format.combine(
+			winston.format.colorize(),
+			winston.format.timestamp(),
+			winston.format.json()
+		  )
+		})
+	  ]
+	};
+
+Or format them the same way for all types:
+
+	  const logConfiguration = {
+		transports: [
+		  new winston.transports.File({
+			level: "warn",
+			filename: "./logs/logfile.log"
+		  }),
+		  new winston.transports.Console({ level: "error" })
+		],
+		format: winston.format.combine(
+		  winston.format.timestamp(),
+		  winston.format.colorize(),
+		  winston.format.json()
+		)
+	  };
+
+
+**NOTE: Colors don't work in windows 10 cmd or in windows vs code, so fuckit.
+
+I can also make console logs a bit more legible by using the printf format instead of json.
+Note that I'm using backticks for the return line, its all in a string literal and passing the calculated values.
+
+
+    new winston.transports.Console({
+      level: "error",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(info => {
+          return `${info.timestamp} - [${info.level}]: ${info.message}`;
+        })
+      )
+    })
+
+This returns:
+	2020-03-25T22:29:25.767Z - [error]: Test genre errorTest genre error
+	
+
+There are more features, such as per-segment of program logging, but I'll save that lesson for when I need it.
+https://developer.ibm.com/technologies/node-js/tutorials/learn-nodejs-winston/
+
