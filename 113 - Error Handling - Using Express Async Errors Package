@@ -1,0 +1,17 @@
+******************************
+**** Express Async Errors ****
+******************************
+This uses the package: "express-async-errors"
+
+To use this in index.js require the package, don't need to store it as a constant.
+	require("express-async-errors");
+
+in genres.js I can remove the call to asyncMiddleware I created on the .get route.
+finally, I'll remove the require to the middleware I set up.
+
+Tested in postman and the connection worked.
+Then I pulled the internet plug and tried again.
+After a long time postman finally timed out, I had error 500 and the message "Something Failed" as I wrote in the error middleware.
+
+This is a very easy way to handle async errors.
+If this app doesn't work for whatever reason, then I need to swap back to the async middleware function.
