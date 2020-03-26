@@ -1,0 +1,75 @@
+**********************************
+**** Extracting Logging Logic ****
+**********************************
+
+Lesson here:
+For exporting more than one thing in a module:
+	exports.value = value 
+
+For exporting only one thing in a module:
+	module.exports = value
+
+Anyway most of my logic for logging was already extracted into its own config module, so I simply moved the 
+logger object creation out of error.js into the config file, renamed the config file to logging.js,
+exported the logger object to the modules that needed it, then moved the logging.js file into the startup folder.
+
+I also moved the requirement for express-async-errors into the logging.js file since it has more to do with logging
+than it does anything else in index.js.
+
+Finally, I import the logging module into index, placed just in front of the routes and db requires in case there is an error.
+
+
+```````````````````` logging.js ````````````````````````
+const config = require("config");
+const winston = require("winston");
+require("winston-mongodb");
+require("express-async-errors");
+// Requiring `winston-mongodb` will expose winston.transports.MongoDB`
+
+//* Logger configuration
+//* 0- error
+//* 1- warn
+//* 2- info
+//* 3- verbose
+//* 4- debug
+//* 5- silly
+//* level shows the level for the error to be sent to that pipeline
+//*  IE: warn and above goes to log, errors also go to console
+
+const logConfiguration = {
+  transports: [
+    new winston.transports.File({
+      level: "warn",
+      filename: "./logs/logfile.log",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    }),
+    new winston.transports.Console({
+      level: "info",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(info => {
+          return `${info.timestamp} - [${info.level}]: ${info.message}`;
+        })
+      )
+    }),
+    new winston.transports.MongoDB({
+      db: config.get("mongoDBKey"),
+      options: {
+        useUnifiedTopology: true
+      },
+      level: "warn",
+      capped: true,
+      cappedSize: 1000000
+    })
+  ]
+};
+
+// Create the logger
+const logger = winston.createLogger(logConfiguration);
+
+exports.logConfiguration = logConfiguration;
+exports.logger = logger;
+
