@@ -1,0 +1,63 @@
+***********************************
+**** Logging Errors to MongoDB ****
+***********************************
+
+For this I'll use the package winston-mongodb
+To use it, in the winston-confing module where I require winston I also add:
+	require('winston-mongodb');
+This exposes: 'winston.transports.mongoDB'
+
+	winston.add( new winston.transports.MongoDB())
+
+In the mongoDB it takes an options object, and the essential object is "db:" which takes the connection string to the DB.
+	*I also have this set in the mongoose.connect.
+	** The unifiedTopology line is so mongoose stops bitching at me.
+
+    new winston.transports["MongoDB"]({
+      db:
+        "mongodb+srv: ***DB STRING***",
+      options: {
+        useUnifiedTopology: true
+      }
+    })
+
+And this can be inserted in with the rest of the options. (changed from bracket notation to dot notation)
+
+const logConfiguration = {
+  transports: [
+    new winston.transports.File({
+      level: "warn",
+      filename: "./logs/logfile.log",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    }),
+    new winston.transports.Console({
+      level: "error",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(info => {
+          return `${info.timestamp} - [${info.level}]: ${info.message}`;
+        })
+      )
+    }),
+    new winston.transports.MongoDB({
+      db:
+        "mongodb+srv://vidlyuser ***DB STRING*** ",
+      options: {
+        useUnifiedTopology: true
+      }
+    })
+  ]
+};
+
+
+I can also limit the level of information stored to the database with the option "level"
+IE: in this case "warn" is level 1, so only "warn" and "error" will be saved.
+	level: "warn"
+	
+There are also options to cap the number of logs, cap the size of logs, expire after X amount of time.
+For more information: https://www.npmjs.com/package/winston-mongodb
+
+
