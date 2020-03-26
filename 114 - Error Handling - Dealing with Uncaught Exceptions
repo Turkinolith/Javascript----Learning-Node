@@ -1,0 +1,31 @@
+*****************************
+**** Uncaught Exceptions ****
+*****************************
+
+So the error.js I've set up right now only catches errors that happen during the request processing pipeline.
+This is particular to express.
+
+If an error happens outside of the context of express, it won't be caught.
+
+*** How to properly handle exceptions in a node process ***
+earlier in the course I went over the process object. its an event emitter.
+it gives a method called "on" to subscribe to an event.
+in node there is a standard event called "uncaughtException"
+This is raised when we have an exception but it isn't handled anywhere.
+
+in error.js:
+	// Notify for uncaught exceptions.
+	process.on("uncaughtException", ex => {
+	  console.log("WE GOT AN UNCAUGHT EXCEPTION, LOGGING & SHUTTING DOWN");
+	  logger.error(ex.message, ex);
+	  process.exit(1);
+	});
+
+
+Test:
+	to test this in index.js I put in the following line:
+		throw new Error("It's all fucked up here.");
+
+This works because I load error.js very early on in index.js so it is already set up for listening for the event.
+When the error is thrown the uncaughtException event is raised, I log the message, and exit the process.
+If I remove the process.exit then the process won't terminate.
