@@ -1,0 +1,51 @@
+**************************************
+**** Unhandled Promise Rejections ****
+**************************************
+In the last lesson I went over uncaught exceptions.
+This only works for synchronous code.
+Unhandled Promises will not raise the uncaughtException event.
+
+For this, I need: process.on("unhandledRejection")
+
+As far as how it works, its exactly like the last time:
+
+	// Notify for uncaught promise rejection.
+	process.on("uncaughtException", ex => {
+	  console.log("WE GOT AN UNHANDLED PROMISE REJECTION, LOGGING & SHUTTING DOWN");
+	  logger.error(ex.message, ex);
+	  process.exit(1);
+	});
+
+Now I will log the error and exit the process.
+
+** On terminating the process*
+
+Remember, its a best practice that when you have an unhandled error that the process should terminate.
+Something could be in a bad state and we should allow the process to terminate and restart it with everything in a clean slate.
+
+How to restart the process? There are tools called process managers and in the future I'll cover one of those.
+
+
+Alternatively to writing the lines of process handling, there is a winston helper function I can use.
+
+
+	//! Catch any uncaught Exceptions, log them to exception file under logs and output a version to console.
+	//* Seems to now also deal with unhandled promises too
+	// I'll also log this to the DB
+	logger.exceptions.handle(
+	  new winston.transports.File({
+		level: "warn",
+		filename: "./logs/exceptions.log"
+	  }),
+	  new winston.transports.Console(),
+	  new winston.transports.MongoDB({
+		db: config.get("mongoDBKey"),
+		options: {
+		  useUnifiedTopology: true
+		},
+		level: "warn",
+		capped: true,
+		cappedSize: 1000000
+	  })
+	);
+
