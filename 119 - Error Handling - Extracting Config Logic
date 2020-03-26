@@ -1,0 +1,50 @@
+*********************************
+**** Extracting Config Logic ****
+*********************************
+
+I'll begin with adding config.js to the startup folder
+
+Again this will be exporting a function so I can immediately call it.
+I'll take out all of the config tests from index and paste them into the function.
+Since that requires the config file and nothing in index uses it, I'll move it over into the config.js file.
+
+I'll also refactor the code a bit, instead of logging an error on the console and exiting the process instead I'll
+throw an exception and the current infrastructure will catch it and terminate the process along with logging it.
+
+Now, back in index.js I require the startup and as it returns a function, execute it.
+
+``````````````config.js```````````````````````````
+const config = require("config");
+
+module.exports = function() {
+  //* Verify that secret keys are enabled
+  if (!config.get("jwtPrivateKey")) {
+    throw new Error("FATAL ERROR: jwtPrivateKey is not defined.");
+  }
+  if (!config.get("mongoDBKey")) {
+    throw new Error("FATAL ERROR: mongoDBKey is not defined.");
+  }
+};
+
+
+``````````````index.js```````````````````````````
+const express = require("express");
+const Joi = require("@hapi/joi");
+Joi.objectId = require("joi-objectid")(Joi); //The require returns a function, so pass Joi const into it, it then again returns a function so we set Joi.objectId equall to it.
+const app = express();
+require("./startup/logging");
+require("./startup/config")();
+require("./startup/routes")(app);
+require("./startup/db")();
+
+// * SET PORT AND START LISTENING
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on port ${port}...`));
+
+
+
+
+Now, the last thing I can move is the configuration of joi.
+I could either move it to a module like validation.js or call the module api-js because I'm using it at the API layer
+there isn't a strong opinion so for now I'll make validation.js
+
