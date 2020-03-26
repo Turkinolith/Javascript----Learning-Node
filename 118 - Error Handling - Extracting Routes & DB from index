@@ -1,0 +1,133 @@
+********************************
+**** Extracting Routes & DB ****
+********************************
+in index.js the main issue on this page is the lack of seperation of concerns.
+There are so many things happening, and thats why there is the large block of require statements.
+
+Below that is some code for handling errors
+
+below that something completely different which is about configuration
+
+then below that connecting to mongoDB.
+
+Then setting up the routes and middleware
+
+These are all different concerns, they should not be mixed in one file or module.
+In this module I should only orchestrate the concerns.
+The details should be moved to other modules.
+
+So the details of setting up routes or the details of connecting to the database should be separated.
+
+In this lesson I'll focus on seperating the routes into their own module.
+
+
+#1 -
+	Create a new folder [startup], and in it a new file routes.js
+
+#2 - 
+	Here I should export a function.
+		module.exports = function () {
+		
+		}
+	
+In this function I'll add all the code for setting up routes and other middleware. So, cut all of the app.use's.
+
+	module.exports = function () {
+    app.use(express.json());
+    app.use("/api/genres", genres);
+    app.use("/api/movies", movies);
+    app.use("/api/rentals", rentals);
+    app.use("/api/users", users);
+    app.use("/api/customers", customers);
+    app.use("/api/auth", auth);
+
+    //* Error Handling, always comes after other routes.
+    //* Used for error 500's
+    app.use(error);
+}
+
+Look at all of the dependencies here.
+app object, express, all of the routers.
+
+
+#3 -
+	On the bottom of the require block of index.js is where I create the app object from express.
+	I should only have one instance of this object for the whole application.
+	
+	I should send a reference to that app object into the new module.
+	So, the routes.js function should take app as an argument. 
+		module.exports = function(app) {...
+	
+	In index.js I now require the routes object:
+		require("./startup/routes")
+	It returns a function, so I immediately call it and pass app as an argument.
+		require("./startup/routes")(app);
+	
+	And thats all I have to do for that.
+
+#4 -
+	Now lets clean up the module.
+	All of the routers should be moved to the new module.
+	Don't forget to change the route path on them, as it is no longer in the top level.
+	
+#5 -
+	now lets extract all the database logic
+	In the startup folder a new file: db.js
+	
+	I copy out all of the mongoose.set lines and the connection.
+	I also change out the console.log of "connected to mongodb" to use winston along with timestamping.
+	
+	
+	In index.js To ensure my error catches go through as I want I move my config checks up to the top, above other import processes.
+
+````````````````index.js````````````````````````````````````````````
+
+const config = require("config");
+
+//* Verify that secret keys are enabled
+if (!config.get("jwtPrivateKey")) {
+  console.error("FATAL ERROR: jwtPrivateKey is not defined.");
+  process.exit(1);
+}
+if (!config.get("mongoDBKey")) {
+  console.log("FATAL ERROR: mongoDBKey is not defined.");
+  process.exit(1);
+}
+
+const express = require("express");
+require("express-async-errors");
+const Joi = require("@hapi/joi");
+Joi.objectId = require("joi-objectid")(Joi); //The require returns a function, so pass Joi const into it, it then again returns a function so we set Joi.objectId equall to it.
+const app = express();
+require("./startup/routes")(app);
+require("./startup/db")();
+
+// * SET PORT AND START LISTENING
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`listening on port ${port}...`));
+
+
+````````````db.js`````````````````````````````````````````````````
+const config = require("config");
+const mongoose = require("mongoose");
+const winston = require("winston");
+const logConfiguration = require("../config/winston-config");
+
+const dblogger = winston.createLogger(logConfiguration);
+
+module.exports = function() {
+  mongoose.set("useNewUrlParser", true);
+  mongoose.set("useFindAndModify", false);
+  mongoose.set("useCreateIndex", true);
+  mongoose.set("useUnifiedTopology", true);
+
+  //* Establish Mongoose connection:
+  mongoose.connect(config.get("mongoDBKey"));
+
+  //* Notify on events if the DB is connected or announce error if could not connect.
+  mongoose.connection.once("open", () =>
+    dblogger.info("connected to Mongo Database")
+  );
+};
+
+
