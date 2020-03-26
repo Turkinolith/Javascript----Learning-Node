@@ -21,7 +21,6 @@ in error.js:
 	  process.exit(1);
 	});
 
-
 Test:
 	to test this in index.js I put in the following line:
 		throw new Error("It's all fucked up here.");
