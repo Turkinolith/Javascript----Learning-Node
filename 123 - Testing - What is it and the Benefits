@@ -1,0 +1,18 @@
+***********************************
+**** What is Automated Testing ****
+***********************************
+
+Its the practice of writing code to test the code and run the test in an automated fashion.
+it consists of production code and test code.
+
+With automated testing you write code and directly call the code with different inputs to verify it returns the right output.
+Automated Tests are repeatable.
+
+
+Benefits of Automated Testing -
+You can test code frequently, in less time.
+catch bugs before deploying.
+Refactor code with confidence.
+	Refactoring means changing structure without changing behavior.
+When you don't have automated tests you have to re-test manually all of the code that may be affected.
+Helps you focus more on the quality
