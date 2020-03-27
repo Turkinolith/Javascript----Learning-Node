@@ -1,0 +1,94 @@
+**************************************
+**** Writing your first unit test ****
+**************************************
+
+To get started I'll use a testing demo project.
+
+	*** Installing ONLY to the Development Environment ***
+I need to install jest, but since this is purely a development tool, I use the "--save-dev" flag so that it does not move beyond the development branch.
+	npm i jest --save-dev
+
+I can verify that it is installed correctly by looking at package.json
+	  "dependencies": {},
+	  "devDependencies": {
+		"jest": "^25.2.3"
+	  },
+
+
+	*** Package.json Scripts ***
+To run tests I'll make a change to the scripts section of package.json.
+The properties I have there define commands I can execute in the commandline. for example this line:
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+I can execute by going to terminal and typing: npm test
+
+The example above is the default when you install a new project.
+I'll remove the echo line and replace it with "jest"
+
+"jest" is the command line interface that comes with Jest to run our tests.
+
+If I run the script with just "jest" set I get a different output:
+	No tests found, exiting with code 1
+	Run with `--passWithNoTests` to exit with code 0
+	In D:\Node_tutorial\testing-demo
+	  6 files checked.
+	  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 0 matches
+	  testPathIgnorePatterns: \\node_modules\\ - 6 matches
+	  testRegex:  - 0 matches
+
+The "testMatch" is the pattern Jest uses to look for test files. So any file that ends with .spec, .test, or .js
+
+So lets make the first test.
+
+#1 - New folder: [tests]
+	I'll be writing tests for the module lib.js.
+	So, the file I'm adding to [tests] is called: lib.test.js
+	NOTE THE NAMING CONVENTION! First the name of the module to test, then .test.js or .spec.js
+
+#2 -
+	To write the test inside the file I call the test function.
+		test( )
+		
+	You give it 2 arguments, first arg is name of the test
+		test("My first test", )
+	
+	The second argument is a function where I implement the test. When I run the tests, Jest will call that function.
+	It's an empty test for now. Thats okay later I'll come back and modify it.
+		test("My first test", () => {
+		  
+		});
+	
+#3 - Now lets run npm test once more:
+	
+	PASS  tests/lib.test.js
+	  √ My first test (1ms)
+
+	Test Suites: 1 passed, 1 total
+	Tests:       1 passed, 1 total
+	Snapshots:   0 total
+	Time:        3.19s
+	Ran all test suites.
+
+#4 - Now, I'll go back and edit the test so that it throws an error on purpose.
+
+	 FAIL  tests/lib.test.js
+	  × My first test (2ms)
+
+	  ● My first test
+
+		Intentional fuck-up
+
+		  1 | test("My first test", () => {
+		> 2 |   throw new Error("Intentional fuck-up");
+			|         ^
+		  3 | });
+		  4 |
+
+		  at Object.<anonymous> (tests/lib.test.js:2:9)
+
+	Test Suites: 1 failed, 1 total
+	Tests:       1 failed, 1 total
+	Snapshots:   0 total
+	Time:        1.979s, estimated 2s
+	Ran all test suites.
+	npm ERR! Test failed.  See above for more details.
