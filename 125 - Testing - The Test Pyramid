@@ -1,0 +1,15 @@
+**********************
+**** Test Pyramid ****
+**********************
+
+This methodology argues that unit tests should be the foundation of testing with the largest numbers and types since their easy and quick to write,
+	with several integration tests next, and finally and in the smallest amount, end to end tests for key functions. E2E shouldn't test edge cases, only test happy path and
+	test edge cases with unit tests.
+	
+The actual ration between the 3 tests depends on your project.
+
+Takeaways:
+	favor unit tests to e2e tests, their quicker to write and faster to perform.
+	Cover unit test gaps with integration tests.
+	use end-to-end tests sparingly.
+
