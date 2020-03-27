@@ -1,0 +1,29 @@
+************************
+**** Types of Tests ****
+************************
+
+Unit
+Integration
+End-to-End
+
+Unit Test - Tests a unit of an application without its "external" dependencies.
+	Dependencies such as files, databases, message queues, web services, so on. 
+	Emphasis on "ecternal"
+	their cheap to write, execute fast.
+	But since their not tested with dependencies, they dont give a lot of confidence about reliability of the application.
+	
+Integration Test - tests the application or component WITH its "external" dependencies.
+	Take longer to execute.
+	Give more confidence.
+	Traditionally defined as a test that takes a few units or classes and tests their behavior as a whole.
+	Can easily lead to fragile tests that are coupled to implementation detail. As the details of the implementation are changed can easily lead to tests that break
+		and require a lot of time to go back and fix the test. Can easily lead to slowdown.
+
+End-to-End test - Drives an application through its UI. 
+	A popular tool that does this is "Selenium" - Which allows us to record the interaction of a user with the app and play it back, and see if the app is returning the
+	right result or not.
+	
+	Gives the greatest confidence.
+	Very slow, since it requires launching the application and testing it through the UI.
+		IE: every test would have to load the page, possibly log in, fill out a form, submit it, and check the result.
+	Very Brittle, a small change to the app or UI could cause the test to break and need to be fixed.
