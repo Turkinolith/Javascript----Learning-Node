@@ -1,0 +1,25 @@
+npm install takes 3 exclusive, optional flags which save or update the package version in your main package.json:
+
+-S, --save: Package will appear in your dependencies.
+
+-D, --save-dev: Package will appear in your devDependencies.
+
+-O, --save-optional: Package will appear in your optionalDependencies.
+
+When using any of the above options to save dependencies to your package.json, there is an additional, optional flag:
+
+-E, --save-exact: Saved dependencies will be configured with an exact version rather than using npm's default semver range operator. Further, if you have an npm-shrinkwrap.json then it will be updated as well.
+
+<scope> is optional. The package will be downloaded from the registry associated with the specified scope. If no registry is associated with the given scope the default registry is assumed. See npm-scope.
+
+Note: if you do not include the @-symbol on your scope name, npm will interpret this as a GitHub repository instead, see below. Scopes names must also be followed by a slash.
+
+Examples:
+
+npm install sax --save
+npm install githubname/reponame
+npm install @myorg/privatepackage
+npm install node-tap --save-dev
+npm install dtrace-provider --save-optional
+npm install readable-stream --save --save-exact
+Note: If there is a file or folder named <name> in the current working directory, then it will try to install that, and only try to fetch the package by name if it is not valid.
