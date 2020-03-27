@@ -1,0 +1,24 @@
+**********************
+**** Test Tooling ****
+**********************
+To write tests, I need a test framework.
+A test framework gives a library that includes a bunch of utility functions to write tests.
+Also gives a test runner which is a program that is ran from cli that executes the tests and gives a report of how many tests pass or fail.
+
+There are several frameworks but at the time of this course creation one of the more popular ones was:
+Jasmine, Mocha, Jest
+
+Jasmine is one of the earlier ones.
+
+Mocha is a fairly popular one, but by design it doesn't include certain features available with other libraries.
+	To get those features you need to use plugins, the most popular are Chi and Sinon. If you use Jasmine you don't need the plugins.
+	
+Jest is a newer one and FB uses it for testing React applications. Its basicly a wrapper for Jasmine so if you know Jasmine, you know Jest.
+	All the utility functions from Jasmine work with Jest but it also has a built in code coverage tool.
+
+In Mosh's opinion, he prefers Jest as we get everything we need in a testing framework.
+With Mocha you have to use 3rd party libraries and that means another place to go find docs. Also they evolve independent of each other which can cause problems.
+
+
+Tools and frameworks come and go, focus on the fundamentals, not the tooling.
+
