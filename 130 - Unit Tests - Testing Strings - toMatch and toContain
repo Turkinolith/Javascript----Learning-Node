@@ -1,0 +1,56 @@
+************************************************************************************************
+**** Testing Strings, using .toMatch or .toContain and avoiding tests that are too specific ****
+************************************************************************************************
+
+For this lesson i'll be using this function:
+
+	module.exports.greet = function(name) { 
+	  return 'Welcome ' + name; 
+	}
+
+In a real world app I may have a line that generates the subject or a email body. This is a simplified version of that.
+
+in the test file, lets add a new describe block and fill out the test.
+
+	describe("greet", () => {
+	  it("should return the greeting message", () => {
+		const result = lib.greet("Larry");
+		expect(result).toBe("Welcome Larry");
+	  });
+	});
+
+When I run the tests I get the following:
+
+ PASS  tests/lib.test.js
+  absolute
+    √ should return a positive num if input is positive (2ms)
+    √ should return a positive num if input is a negative number (1ms)
+    √ should return zero if input is zero
+  greet
+    √ should return the greeting message
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        2.027s, estimated 5s
+Ran all test suites.
+
+
+Everything passed, but there is a problem with this test.
+It is too specific! It can easily break.
+
+If I go back to the greet function and simply add an exclamation mark at the end of the string, it will break the test.
+
+**TESTS SHOULD NEITHER BE TOO SPECIFIC OR TOO GENERAL**
+
+If tests are too specific they will easily break.
+If tests are too general, they won't give confidence that the code is actually working.
+
+So, how to make this test more general?
+For testing strings, instead of testing for exact equality I can look for patterns by using a regex and the .toMatch method instead of .toBe
+	expect(result).toMatch(/Larry/);
+In this case, as long as the passed variable is included somewhere in the result, then it will pass. I'm no longer looking for the exact message.
+
+If I don't want to use a regex, I can instead use the .toContain method.
+	expect(result).toContain('Larry');
+
