@@ -1,0 +1,58 @@
+************************
+**** Grouping Tests ****
+************************
+
+Currently I have 3 tests for testing the absolute function.
+As I write more tests it becomes critical to organize the tests so they become clean and maintainable.
+
+*** TESTS ARE FIRST-CLASS CITIZENS IN YOUR SOURCE CODE ***
+
+In Jest and Jasmine there is a function called "describe" for grouping related tests.
+
+	describe('absolute', () => {
+	...All related tests...
+	}
+	
+Like this, also since the "describe" states what function they are for, 'absolute' I don't need to repeat it in the test names.
+
+	describe("absolute", () => {
+	  test("should return a positive num if input is positive", () => {
+		const result = lib.absolute(1);
+		expect(result).toBe(1);
+	  });
+
+	  test("should return a positive num if input is a negative number", () => {
+		const result = lib.absolute(-1);
+		expect(result).toBe(1);
+	  });
+
+	  test("should return zero if input is zero", () => {
+		const result = lib.absolute(0);
+		expect(result).toBe(0);
+	  });
+	});
+
+JEST and Jasmine have another function called "it"
+I can replace "test" with "it" when inside a describe block. its the same as "test" but easier to read, almost plain english!
+	IE: describe('absolute', () => { it('should return a positive number if input is positive'...
+
+Code now looks like this:
+
+	const lib = require("../lib");
+
+	describe("absolute", () => {
+	  it("should return a positive num if input is positive", () => {
+		const result = lib.absolute(1);
+		expect(result).toBe(1);
+	  });
+
+	  it("should return a positive num if input is a negative number", () => {
+		const result = lib.absolute(-1);
+		expect(result).toBe(1);
+	  });
+
+	  it("should return zero if input is zero", () => {
+		const result = lib.absolute(0);
+		expect(result).toBe(0);
+	  });
+	});
