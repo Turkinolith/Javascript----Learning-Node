@@ -1,0 +1,71 @@
+************************
+**** Testing Arrays ****
+************************
+
+The function I'll use for this test is:
+	module.exports.getCurrencies = function() { 
+	  return ['USD', 'AUD', 'EUR'];
+	}
+
+Now back in the test block lets add another describe section for it.
+	describe("getCurrencies", () => {
+	  
+	})
+
+How many tests does it need? Well, there is only one execution path, so a single test is sufficient.
+	describe("getCurrencies", () => {
+	  it('should return supported currencies', () => {
+		const result = lib.getCurrencies();
+		
+	  })
+	})
+
+In the last lession I covered how tests should neither be too general nor too specific.
+So lets use this principle in the context of arrays.
+
+// too general
+	expect(result).toBeDefined(); 
+This fails because if I simply return "1" from the function, it'll pass the test, but the test was too general.
+
+	expect(result).not.toBeNull();
+Similarly, this test is useless
+
+// too specific
+	expect(result[0]).toBe("USD");
+	expect(result[1]).toBe("AUD");
+	expect(result[2]).toBe("EUR");
+What is the problem with this approach? It's testing the exact location of the elements within the array.
+If I change the sort, then this test is going to break.
+
+** When testing arrays, don't look for the exact location of an element within it. **
+
+	expect(result.length).toBe(3);
+This test is also too specific, if I ever add any currencies to be also outputted in this array, then the test breaks.
+
+Whats the proper way to test this?
+
+// Proper way
+Check for the existence of an element in the array irrespective of its location.
+	
+	expect(result).toContain("USD");
+	expect(result).toContain("AUD");
+	expect(result).toContain("EUR");
+It doesn't matter where in the array, as long as this is a result somewhere within the array then its good.
+NOTE: this is not the "IDEAL" way.
+
+// Ideal way
+Instead of 3 assertions, use one assertion that compares the result with an array that includes these elements.
+This will use the expect.arrayContaining method, it takes an array.
+As long as the result array includes those values defined, it will pass.
+
+	expect(result).toEqual(expect.arrayContaining(['EUR', 'USD', 'AUD']))
+
+
+Final Code for this section:
+
+	describe("getCurrencies", () => {
+	  it("should return supported currencies", () => {
+		const result = lib.getCurrencies();
+		expect(result).toEqual(expect.arrayContaining(["EUR", "USD", "AUD"]));
+	  });
+	});
