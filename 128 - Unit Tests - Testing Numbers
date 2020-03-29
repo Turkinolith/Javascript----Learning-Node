@@ -1,0 +1,101 @@
+*************************
+**** Testing Numbers ****
+*************************
+In this lesson I'll write unit tests for the following function:
+
+	// Testing numbers 
+	module.exports.absolute = function(number) {
+	  if (number > 0) return number; 
+	  if (number < 0) return -number; 
+	  return 0; 
+	}
+
+This function takes a number, if its positive it'll return the same number. If negative it'll return -number to make it positive, or it'll return zero.
+
+So, it'll always return a positive number, or zero.
+
+How many tests do I need here?
+A basic guideline is the # of unit tests for a given function should be greater than or equal to the number of execution paths.
+
+How many paths are in this function?
+Well, the 2 ifs are each an execution path, the return 0 is also an execution path.
+That makes 3 total. We want to make sure that every execution path is covered.
+
+
+Back in lib.test.js now:
+#1 - 
+	Lets rename it to first the name of the function, that is "absolute"
+now what is the first test case? that it should return a positive number if the test is positive.
+	'absolute - should return a positive num if input is positive'
+
+#2 - Now to call the function, on the top import the lib module.
+	const lib = require('../lib')
+
+#3 - Next in the test body call the function and pass a positive value as per the test.
+You can put in whatever, but as a general best practice it's best to avoid "Magic numbers" as someone reading the test would wonder where those numbers came from.
+So, its best to use a simple value like "1"
+	lib.absolute(1);
+
+#4 - Next, get the result and save it in a variable.
+	const result = lib.absolute(1);
+
+
+#5 - Finally, make an assertion and verify that the result is correct.
+Jest has a utility function called "expect"
+So, call that function, give it the result, then call another function. This other function is called a matcher function.
+	expect(result).toBe(1);
+
+See, this is very readable.
+So, lets run the test.
+
+D:\Node_tutorial\testing-demo>npm test
+
+> testing-demo@1.0.0 test D:\Node_tutorial\testing-demo
+> jest
+
+ PASS  tests/lib.test.js (5.233s)
+  √ absolute - should return a positive num if input is positive (2ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        17.349s
+Ran all test suites.
+
+	*** How to find the matcher functions ***
+Now, there was no intelli-sense help to find the matcher functions.
+
+https://jestjs.io/docs/en/using-matchers
+
+
+
+That was one test for one execution path. Lets copy the code and make the next two.
+
+	const lib = require("../lib");
+
+	test("absolute - should return a positive num if input is positive", () => {
+	  const result = lib.absolute(1);
+	  expect(result).toBe(1);
+	});
+
+	test("absolute - should return a positive num if input is a negative number", () => {
+	  const result = lib.absolute(-1);
+	  expect(result).toBe(1);
+	});
+
+	test("absolute - should return zero if input is zero", () => {
+	  const result = lib.absolute(0);
+	  expect(result).toBe(0);
+	});
+
+And run the test:
+	 PASS  tests/lib.test.js
+	  √ absolute - should return a positive num if input is positive (2ms)
+	  √ absolute - should return a positive num if input is a negative number
+	  √ absolute - should return zero if input is zero (1ms)
+
+	Test Suites: 1 passed, 1 total
+	Tests:       3 passed, 3 total
+	Snapshots:   0 total
+	Time:        1.983s, estimated 6s
+	Ran all test suites.
