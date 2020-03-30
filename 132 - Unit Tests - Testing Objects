@@ -1,0 +1,79 @@
+*************************
+**** Testing Objects ****
+*************************
+
+I'll be working with this function:
+
+	module.exports.getProduct = function(productId) { 
+	  return { id: productId, price: 10 };
+	}
+
+First, lets add a new describe block for it.
+how many tests does it need? theres only one execution path so lets just add one.
+The result should have an ID that matches the value given into the function and a price of 10.
+
+	it('should return the product with the given id', () => {
+		const result = lib.getProduct(1);
+		expect(result).toBe({ id: 1, price: 10 })
+	});
+
+If you run this test you will get a fail!
+Why? because the two objects are at different locations in memory.
+The toBe matcher compares the references of the objects in memory. Because the result is in a different memory locatn than the object its testing against 
+it assumes the objects are different and the test fails.
+
+In this test I want to ensure that the object has the stated properties, I don't care where in memory it is stored.
+
+So, instead of to-be I use toEqual:
+	describe("getProduct", () => {
+	  it("should return the product with the given id", () => {
+		const result = lib.getProduct(1);
+		expect(result).toEqual({ id: 1, price: 10 });
+	  });
+	});
+
+Now it passes!
+
+
+	*** toMatchObject ***
+	
+When testing objects there is another matcher I can use:
+	expect(result).toMatchObject( {object} );
+
+So how does this differ from toEqual?
+
+In toEqual both the source and target objects must have exactly the same amount of properties with the same values.
+
+I could get an object from somewhere else and that object may have a bunch of other properties.
+When testing equality I may not want to list all of those properties here.
+In that case you use .toMatchObject()
+
+with .toMatchObject I can have a bunch of other properties in the resulting object, but as long as it has the properties described it'll pass.
+
+Example, if I change the original function to:
+	module.exports.getProduct = function(productId) { 
+	  return { id: productId, price: 10, category: "a" };
+	}
+
+Then the test with the .toEqual() will fail, the objects properties don't match up.
+However, if I change the test to .toMatchObject({ id: 1, price: 10 })
+it will pass, because { id: 1, price: 10 } are among the resulting object properties.
+
+
+	*** toHaveProperty ***
+There is also a 3rd way to test objects, .toHaveProperty()
+This function takes a single key/value pair. 
+The type of the value is important too: string must be string, number must be number or the test will fail.
+
+example:
+	expect(result).toHaveProperty("id", 1);
+This will pass if the object has the property "id" and it has a numeric 1 value.
+
+
+If I put instead:
+	expect(result).toHaveProperty("id", "1");
+This will fail, because it is looking for the "id" property to have a string with "1" value.
+
+
+Following the principal of not wanting tests to be too general nor too specific, for objects toEqual or toBe you don't want to use.
+It's better to use .toMatchObject or toHaveProperty
