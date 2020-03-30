@@ -1,0 +1,187 @@
+****************************
+**** Testing Exceptions ****
+****************************
+For this lesson I'll be using the following function.
+
+	module.exports.registerUser = function(username) {
+	  if (!username) throw new Error("Username is required.");
+
+	  return { id: new Date().getTime(), username: username };
+	};
+
+Sometimes functions may throw an exception under certain forseen circumstances, so this will allow for testing of that.
+In the above function, if the username is "falsy", it will throw an exception. 
+Otherwise it will return an object with 2 properties: ID and username.
+
+How many execution paths are here? 2.
+So I need at least 2 unit tests.
+
+#1 - First make the describe block:
+	describe("registerUser", () => {
+  
+	})
+
+#2 - First test is it should throw if username is falsy.
+
+What were the falsy values in JS?
+Null, undefined, NaN, '', 0, and false.
+
+So none of these are acceptable as username.
+Technically to test the first execution path, I need these 6 test cases. I need to ensure that in all 6 of these input cases it throws an exception.
+
+Example:
+	const result = lib.registerUser(null);
+	expect(result).toThrow();
+But this code doesn't make sense, because I'm not getting a result from the first line of the function. So I can't expect the result to throw an exception.
+
+When it comes to testing exceptions you need to take a different approach.
+
+instead of passing result to expect().toThrow(). I should pass a callback function.
+	expect(() => { }).toThrow()
+
+Inside of this callback I should put the code that I expect to throw an exception.
+
+	expect(() => { lib.registerUser(null) }).toThrow();
+
+So in this case the test code is only a single line.
+In real world situations the test code may be a few lines long. In that case I may want to use parameterized tests.
+
+	*** JEST DOCUMENTATION FOR THE .EACH METHOD ***
+https://jestjs.io/docs/en/api#testeachtablename-fn-timeout
+
+	test.each(table)(name, fn, timeout)
+	Use test.each if you keep duplicating the same test with different data. test.each allows you to write the test once and pass data in.
+	
+	table: Array of Arrays with the arguments that are passed into the test fn for each row.
+	Note If you pass in a 1D array of primitives, internally it will be mapped to a table i.e. [1, 2, 3] -> [[1], [2], [3]]
+	
+	name: String the title of the test block.
+	
+	Generate unique test titles by positionally injecting parameters with printf formatting:
+	%p - pretty-format.
+	%s- String.
+	%d- Number.
+	%i - Integer.
+	%f - Floating point value.
+	%j - JSON.
+	%o - Object.
+	%# - Index of the test case.
+	%% - single percent sign ('%'). This does not consume an argument.
+	
+	fn: Function the test to be ran, this is the function that will receive the parameters in each row as function arguments.
+	
+	Optionally, you can provide a timeout (in milliseconds) for specifying how long to wait for each row before aborting. Note: The default timeout is 5 seconds.
+	Example:
+
+	test.each([
+	  [1, 1, 2],
+	  [1, 2, 3],
+	  [2, 1, 3],
+	])('.add(%i, %i)', (a, b, expected) => {
+	  expect(a + b).toBe(expected);
+	});
+
+
+#3 - To do this, create an array.
+
+	const args = [null, undefined, NaN, '', 0, false];
+	
+	describe("registerUser", () => {
+	  test.each(args)("given %p as an argument, should throw exception", (firstArg) => {
+		expect(() => { lib.registerUser(firstArg) }).toThrow();
+	  })
+	})
+
+I can also condense this a bit by removing the extra defined array and put it inline.
+
+	describe("registerUser", () => {
+	  test.each([null, undefined, NaN, "", 0, false])(
+		"given %p as an argument, should throw exception",
+		firstArg => {
+		  expect(() => {
+			lib.registerUser(firstArg);
+		  }).toThrow();
+		}
+	  );
+	});
+
+Both Return:
+
+  registerUser
+    √ given null as an argument, should throw exception (4ms)
+    √ given undefined as an argument, should throw exception (1ms)
+    √ given NaN as an argument, should throw exception
+    √ given "" as an argument, should throw exception (1ms)
+    √ given 0 as an argument, should throw exception (1ms)
+    √ given false as an argument, should throw exception
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        2.062s
+Ran all test suites.
+
+
+
+"Single Assertion Principle"
+
+Some developers interprete this principle such that you should have only a single call to the expect function in each test.
+So they would organize the code in a different way with multiple "it" functions for multiple test cases and in each test case would test for one of those values.
+In this case it doesn't make much of a difference since the testing logic is a single line of code.
+However, for you want to duplicate it for a test case that is 5-10 lines of code that will lead to a lot of duplicated code that is unnecessary.
+This single assertion principle is really about logical assertions. In this case we're talking about "falsy".
+So if we pass any of these arguments this test case should fail, so in my opinion there is no reason to split this test into multiple test cases but if that is what you prefer, go for it.
+
+
+Now, lets do the second test case, the "happy path"
+If I put in a valid username, it should return a user object that has a username property that matches the passed value.
+It should also have an ID that is set to the current time when the object was created.
+In the unit test, I can't make an assertion on the current time because the time will be different from the moment I call the method to when I make the assertion.
+
+Instead of including the ID property in the toMatchObject, instead I'll write another assertion.
+	expect(result.id).toBeGreaterThan(0);
+Thats sufficient to know that the ID property has a positive number.
+
+Code:
+  it("should return a user object if valid username is passed", () => {
+    const result = lib.registerUser("Larry");
+    expect(result).toMatchObject({ username: "Larry" });
+    expect(result.id).toBeGreaterThan(0);
+  });
+
+See, this is 2 assertions, but their logically about a single concept being about the object that is returned from the method.
+
+
+Full code block:
+	describe("registerUser", () => {
+	  test.each([null, undefined, NaN, "", 0, false])(
+		"given %p as an argument, should throw exception",
+		firstArg => {
+		  expect(() => {
+			lib.registerUser(firstArg);
+		  }).toThrow();
+		}
+	  );
+
+	  it("should return a user object if valid username is passed", () => {
+		const result = lib.registerUser("Larry");
+		expect(result).toMatchObject({ username: "Larry" });
+		expect(result.id).toBeGreaterThan(0);
+	  });
+	});
+
+Returns:
+  registerUser
+    √ given null as an argument, should throw exception (4ms)
+    √ given undefined as an argument, should throw exception (1ms)
+    √ given NaN as an argument, should throw exception
+    √ given "" as an argument, should throw exception (1ms)
+    √ given 0 as an argument, should throw exception
+    √ given false as an argument, should throw exception (1ms)
+    √ should return a user object if valid username is passed (1ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        2.051s
+Ran all test suites.
