@@ -1,0 +1,17 @@
+************************************
+**** Continuously Running Tests ****
+************************************
+
+So far every time I make a change to the test or production code I have to go back to terminal and re-run npm test again.
+This is tedious, especially with a large application, so this will cover how to have JEST continuously watch the files and eany time I make a change to either 
+the test code or production code it will re-run the tests.
+
+#1 - in package.json change the test command 
+	"scripts": {
+	  "test": "jest --watchAll"
+	},
+
+#2 - Back in terminal, when I run npm test, first JEST will run all of the test and then continue to watch for changes.
+	When you save an edit, it will re-run the tests and output them to terminal.
+	
+	When working, you'd want to have the terminal visible somewhere so you can see those errors if they pop up.
