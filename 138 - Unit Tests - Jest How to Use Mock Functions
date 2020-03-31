@@ -1,0 +1,152 @@
+*****************************
+**** Jest Mock Functions ****
+*****************************
+
+In the last lesson I covered how to create a mock function and test the interaction of one object with another.
+I used a flag to test if the mail.send method was called by notifyCustomer.
+
+Here is a better approach to achieve the same thing.
+
+In Jest there is a method to create mock functions.
+	const mockFunction = jest.fn();
+what we get here is a mock function. it has no implementation, its a function with no code.
+Can call it like this:
+	mockFunction();
+
+	***Mocking a Return***
+We can program the mock to return a specific value.
+	const mockFunction = jest.fn();
+	mockFunction.mockReturnValue(1);
+	mockFunction();
+//returns 1 as the result.
+
+	***Mocking a Promise***
+I can also program the mock function to return a promise.
+	const mockFunction = jest.fn();
+	mockFunction.mockResolvedValue(1);
+
+So now this returns a promise.
+And if I await it...
+	const result = await mockFunction();
+
+I get result = 1.
+
+
+	***Mocking a Rejected Promise***
+To simulate a rejected promise I use the mockRejectedValue method and pass an error object.
+	const mockFunction = jest.fn();
+	mockFunction.mockRejectedValue(new Error("error message");
+
+With this, when I call mockFunction() it will be rejected, so technically I should have this in a try/catch block and the catch block will get the error returned.
+
+
+In each test I can have a mock function that behaves differently.
+Why does this matter?
+
+I can simplify the implementation of the test. Instead of manually creating the functions and flags to determine if they were called 
+I can use jest to create a mock function.
+
+
+Example - Lets use the most recent test
+	describe("notifyCustomer", () => {
+	  it("should send an email to the customer", () => {
+		db.getCustomerSync = function(customerId) {
+		  return { email: "a" };
+		};
+
+		let mailSent = false;
+		mail.send = function(email, message) {
+		  mailSent = true;
+		};
+		lib.notifyCustomer({ customerId: 1 });
+
+		expect(mailSent).toBe(true);
+	  });
+	});
+
+
+Now, I'll rewrite this using Jest.
+
+First, lets look at the getCustomerSync method.
+		db.getCustomerSync = function(customerId) {
+		  return { email: "a" };
+		};
+		
+Rewriting this with JEST is done like this:
+		db.getCustomerSync = jest.fn().mockReturnValue({ email: 'a' });
+
+3 lines of code now are one line.
+
+Similarly I can replace the mail.send with a fake implementation.
+
+	mail.send = jest.fn()
+Now here, I don't need to create a flag to explicitly determine if the method is called.
+I can delete those lines and change the expectation. There is a matcher that works explicitly with mock functions.
+
+	expect(mail.send).toHaveBeenCalled()
+
+because mail.send is a Jest mock function I can use this matcher on that.
+When you create mock functions manually we don't have this matcher, so I needed to use a flag to see if it was called or not.
+
+In terms of organization, its best to have all of the mock functions in one place so final code looks like this with the mocks at the top, a line break, then the test code and then the assertion.
+
+
+	describe("notifyCustomer", () => {
+	  it("should send an email to the customer", () => {
+	    
+		db.getCustomerSync = jest.fn().mockReturnValue({ email: 'a' })
+	    mail.send = jest.fn();
+
+		lib.notifyCustomer({ customerId: 1 });
+
+		expect(mail.send).toHaveBeenCalled();
+	  });
+	});
+
+With this set up I can check if a matcher has been called or not.
+
+
+Sometimes you may want to check the arguments that have been passed to that method.
+There is another matcher for this: .toHaveBeenCalledWith() and here you can pass all of the arguments.
+
+	*** Testing for passed arguments that don't involve strings ***
+In the case of notifyCustomer I expect the mail.send is being passed 2 arguments: customer.email and "your order was placed successfully."
+So in the test I can assert that the message is called with the email, which in this case is 'a' and the message.
+	expect(mail.send).toHaveBeenCalledWith('a', '...')
+	
+Remember, when testing strings we shouldn't be testing for the exact equality. So this method works well when the arguments your passing are not strings.
+
+	*** How to Test passed Arguments that include strings ***
+If you still want to check the arguments passed to that method, you'll need a different approach. Lets go back to the .toHaveBeenCalled
+Now I can make an assertion about each argument passed to the method.
+The mock functions have a property called "mock" and a sub-property "calls" which is an array that keeps track of all of the calls to the mock function.
+The array is sequential, so index 0 is the first call, 1 is the second, so on.
+Each element has another array of arguments. 
+So, first call, first argument, assert that it is 'a' looks like this:
+
+	expect(mail.send).toHaveBeenCalled();
+	expect(mail.send.mock.calls[0][0]).toBe('a')
+	
+Similarly I can check the 2nd argument. Here instead of using an exact equality check I can use a regex.
+In this case as long as I have the word "order" in the message, then it passes.
+
+	expect(mail.send).toHaveBeenCalled();
+	expect(mail.send.mock.calls[0][0]).toBe('a');
+	expect(mail.send.mock.calls[0][1]).toMatch(/order/);
+
+Full Test:
+	describe("notifyCustomer", () => {
+	  it("should send an email to the customer", () => {
+		db.getCustomerSync = jest.fn().mockReturnValue({ email: "a" });
+		mail.send = jest.fn();
+
+		lib.notifyCustomer({ customerId: 1 });
+
+		expect(mail.send).toHaveBeenCalled();
+		expect(mail.send.mock.calls[0][0]).toBe("a");
+		expect(mail.send.mock.calls[0][1]).toMatch(/order/);
+	  });
+	});
+
+Summary:
+This is the reason for using jest mock functions. We can easily set them up and with them tell if they were called and also check all the arguments passed into them.
