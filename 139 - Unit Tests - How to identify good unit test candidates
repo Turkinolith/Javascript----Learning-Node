@@ -1,0 +1,35 @@
+***************************
+**** What to Unit Test ****
+***************************
+
+Lets open up the vidly app and see what parts of this application are great candidates for unit testing.
+
+	*** Example of a poor unit test candidate ***
+[middleware]-admin.js
+	In this module there is a single function with 2 execution paths. #1 the if block, #2 the call to next().
+
+However, in this function we're working with external dependencies, the request and response objects. 
+When unit testing this function we don't want to send a real HTTP request here because that would be an integration test, not a unit test.
+If I really want to unit test this function I'll need to mock the request and response objects.
+So, I'd need to create mock objects that have the same interface as req and res objects in express. IE: response needs a .status method, the .send method 
+So, we'd have to do a lot of mocking and this makes the unit tests to be very fat and unmaintainable.
+
+It's better to test this function as part of an integration test. 
+As a general rule of thumb use unit tests for testing algorithms with minimal or no dependencies on external resources. Try to avoid creating too many mocks.
+
+
+The same applies to testing all of the route handlers.
+Again, their dealing with req, res to test them we need integration tests.
+
+
+	*** Example of a good unit test candidate ***
+
+[models]-user.js
+Earlier I created the "generateAuthToken" method.
+Its a simple method that generates a JWT and returns it.
+So, I can call this in a unit test, get the result, verify its a valid JWT, and check that in the payload I have the specified properties.
+
+Unit tests are ideal for testing functions like this.
+I'm not working with a bunch of external resources so I don't have to do much if any mocking. I simply call the function and verify the result. 
+Its far easier and faster than an integration test that sends an HTTP request to one of the endpoints and exercises the entire application stack.
+
