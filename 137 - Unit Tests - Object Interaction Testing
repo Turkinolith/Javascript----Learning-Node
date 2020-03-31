@@ -1,0 +1,94 @@
+*****************************
+**** Interaction Testing ****
+*****************************
+
+In the last lesson I covered how to replace the real implementation of a function with a mock function.
+
+In this lesson I'll continue with this technique, but will then cover a problem with it and go over a better way to create mock functions.
+
+I'll be using this function:
+	module.exports.notifyCustomer = function(order) {
+	  const customer = db.getCustomerSync(order.customerId);
+
+	  mail.send(customer.email, "Your order was placed successfully.");
+	};
+
+Again I'm using the database object, get a customer from the database. Then use another object, the mail object imported from the mail module, call the send method and send an email to the customer with the stated subject.
+
+#1 - 
+I create the describe block for this test
+It should send an email to the customer.
+I call the function and pass into it an object with "customerID" as a property because I'm going to look up the customer with the given Id in this method.
+
+	describe("notifyCustomer", () => {
+	  it('should send an email to the customer', () => {
+		lib.notifyCustomer({ customerId: 1 })
+	  })
+	})	
+
+
+
+#2 -
+Now, before I call notifyCustomer I should replace the real implementation of the getCustomerSync method of the db object.	
+I set db.getCustomerSync to a new function that takes a customerId and returns a customer object with the email property.
+
+The actual value doesn't matter, again it's best to use simple values instead of magic numbers or arbitrary text because it reduces the confusion when someone else reads the code.
+
+	describe("notifyCustomer", () => {
+	  it('should send an email to the customer', () => {
+		db.getCustomerSync = function(customerId) {
+		  return { email: "a"}
+		}
+		lib.notifyCustomer({ customerId: 1 })
+	  })
+	})
+	
+#3 -
+I've replaced the real implementation of db.getCustomerSync, now similarly I need to do the same for mail.send. In a unit test I don't want to call a real mail server.
+Chances are it wont' be available and we don't want the test to be flakey and slow.
+So, import the mail module on the top.
+	const mail = require("../mail")
+
+** Quick Note about importing modules **
+When you require("") a module in node that module is loaded and cached in memory.
+So if I load the module in 5 different locations in the application there is only a single instance of that module loaded in memory.
+That is why the mail object that we get from requiring it here in the unit tests module is the same as the one loaded in lib.js.
+There is only a single instance in the memory when loading it in Node.
+
+*****************************************
+
+back to the unit test, lets replace mail.send now.
+
+mail.send lets set that to a new function. it takes email and message as arguments.
+What should I have in the body?
+When I call lib.notifyCustomer I want to make sure that it sent an email to that customer.
+
+So, I can define a bool like "let mailSent = false;"
+Then set in the function for mail.send mailSent = true
+Finally, expect that mailSent = true at the end.
+
+	describe("notifyCustomer", () => {
+	  it("should send an email to the customer", () => {
+		db.getCustomerSync = function(customerId) {
+		  return { email: "a" };
+		};
+
+		let mailSent = false;
+		mail.send = function(email, message) {
+		  mailSent = true;
+		};
+		lib.notifyCustomer({ customerId: 1 });
+
+		expect(mailSent).toBe(true);
+	  });
+	});
+
+So, if notifyCustomer is implemented properly at some point mail.send will be called and using the mailSent flag I can determine if the mail is sent or not.
+So, in essence what I'm testing here is the interaction of one object with another object.
+
+When I call notifyCustomer, what I want to test is that it is interacting with the mail object properly. So I'm testing the interaction of 2 objects.
+
+
+*****************CAVET*******************
+While this approach is perfectly fine for creating mock functions, there is a simpler and better way for making them in JEST that will be covered in the next lesson.
+
