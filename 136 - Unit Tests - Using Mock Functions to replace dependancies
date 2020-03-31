@@ -1,0 +1,98 @@
+
+****************************************
+**** Creating Simple Mock Functions ****
+****************************************
+In all of the problems so far, I've tested functions that had no dependencies on external resources.
+In this lesson, I will be using the following function.
+
+	module.exports.applyDiscount = function(order) {
+	  const customer = db.getCustomerSync(order.customerId);
+
+	  if (customer.points > 10) order.totalPrice *= 0.9;
+	};
+
+This applyDiscount function uses the "getCustomerSync" method from the imported db object to simulate getting information from an external resource, in this case a database.
+
+As mentioned before, Unit tests should not touch external resources. Otherwise its an integration test.
+The point of a unit test is to decouple the code from external dependencies that may not be available at the time of running the tests so I can quickly and reliably execute the tests.
+
+So, how to unit test a function that either directly or indirectly talks to an external resource?
+
+#1 - 
+	To unit test this function need to replace the real implementation of the db.getCustomerSync() method with a fake or mock implementation.
+	From the outside it should look exactly the same, in this case it takes a customerID and returns a customer Object, but the implementation is different. It shouldn't talk with a remote service.
+	
+Lets start with a new describe block:
+	describe("applyDiscount", () => {
+	  it('should apply 10% discount if customer has more than 10 points', () => {
+		lib.applyDiscount({ customerID: 1, totalPrice: 10 })
+	  })
+	})	
+	
+#2 - 
+	Because I'll make an assertion against the totalPrice property I should extract the object into a constant so I can work with it later.
+
+	describe("applyDiscount", () => {
+	  it('should apply 10% discount if customer has more than 10 points', () => {
+		const order = { customerID: 1, totalPrice: 10 }
+		lib.applyDiscount(order)
+	  })
+	})
+
+#3 - 
+	Now Lets do the test line:
+	
+	describe("applyDiscount", () => {
+	  it('should apply 10% discount if customer has more than 10 points', () => {
+		const order = { customerID: 1, totalPrice: 10 }
+		lib.applyDiscount(order)
+		expect(order.totalPrice).toBe(9);
+	  })
+	})
+
+Now I've established the main body of the test.
+
+However, before I can continue I need to replace the real implementation of the getCustomerSync() method with a fake implementation.
+*this is really easy in plain JS.
+
+#4 -
+	First import the DB module
+		const db = require('../db');
+
+
+Now back in the test function I simply set the getCustomerSync function to a new function.
+It'll take the customerId as before, and returns a simple object with the customer ID, I also need the points property because what I'm returning in the real implementation is an object with the properties ID and Points.
+I'll also add a message with "fake reading customer" so its obvious.
+
+describe("applyDiscount", () => {
+  it('should apply 10% discount if customer has more than 10 points', () => {
+	db.getCustomerSync = function(customerId) {
+	console.log("Fake reading customer")
+		return { id: customerId, points: 20 }
+	}
+    const order = { customerID: 1, totalPrice: 10 }
+    lib.applyDiscount(order)
+    expect(order.totalPrice).toBe(9);
+  })
+})
+
+Running the tests returns:
+
+
+
+ PASS  tests/exercise1.test.js
+ PASS  tests/lib.test.js
+  ● Console
+
+    console.log tests/lib.test.js:62
+      Fake reading customer
+
+
+Test Suites: 2 passed, 2 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        2.745s
+Ran all test suites.
+
+
+See, the "fake reading customer" line prints out (and it shows you which line did it) and all the tests pass.
