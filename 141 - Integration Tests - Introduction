@@ -1,0 +1,11 @@
+*****************************
+**** Integration Testing ****
+*****************************
+Unit tests are quick to write and fast to execute. 
+In real world apps we need to work with 1 or more resources, this is where integration tests come in.
+
+In integration tests we test our code along with external resources as whole.
+
+To write integration tests, we need a real database, populate it with data for testing, send an HTTP request to an endpoint to test, then make an assertion.
+That assertion may involve inspecting the response or the Database.
+For example, in testing a POST request to the database we may look at the DB and verify that the data is there.
