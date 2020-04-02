@@ -1,0 +1,26 @@
+*********************************************************
+**** Preparing Vidly backend for integration testing ****
+*********************************************************
+
+
+#1 -
+	There was a mistake on line 5, 
+	require("./startup/logging");
+This function was required, but not called. So it wont work.
+To fix this:
+	require("./startup/logging")();
+
+#2 -
+	in package.json on the scripts section, test file: add the "--verbose" flag to it
+
+  "scripts": {
+    "test": "jest --watchAll --verbose"
+  },
+
+This will give extra info in console and if something goes wrong can use that info to troubleshoot.
+
+#3 -
+	Logging module.
+	For some reason the instructor says that in the logging.js module requiring winston-mogodb is causing tests to hang.
+	So, for now hes commenting it out as well as the function that uses the mongoDB option.
+	I'll do the same for parity.
