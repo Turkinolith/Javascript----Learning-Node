@@ -1,0 +1,172 @@
+
+****************************
+**** Setting up Test DB ****
+****************************
+
+As mentioned, we run integration tests on a real DB.
+But we don't want it to be the same as the development or production DB. 
+Why? Because we will add or remove documents from the test DB and we don't want to mess up the data in the dev nore production environment.
+
+#1 -
+From the lesson:
+
+To set this up go into the config default.json and add a new key pair
+	"db": ""
+
+This will be set to the default Mongo connection string, then be overridden it in the config file for the test environment
+
+From me:
+Actually, I already have my MongoDB key set up 90% the same as this.
+The only thing I need to do is change where I'm pointing it to in the test.json 
+
+Also in db.js instructor extracted the key for the DB into the connection log.
+I didn't like having my whole connection string with secret info appearing there, so I removed it.
+	const [dbString] = db.match(/(tester.+)(.*)(\?)/gs); // extract DB connection name without returning all info.
+
+*Note the array destructuring going on with the result.
+
+
+********************************
+**** First Integration Test ****
+********************************
+
+To write integration tests for express applications I need a library called supertest
+using it, I can send HTTP requests to endpoints just like how I manually do it with postman.
+Since this is only needed for testing, save it as a development dependency
+
+	npm i supertest --save-dev
+*Note due to errors with a package named "formidable" I needed to install that as well.
+
+in index.js:
+The app.listen returns a server object, I'll need this for testing.
+So lets save that to a constant named server, and add it as a module export.
+
+
+Lets create the first integration test.
+
+#1 -
+	New folder [integration]
+	New file [genres.test.js]
+
+#2 - 
+	start with a describe block. lets call it /api/genres
+		In this will be other test suits.
+		It will include all of the tests for sending "GET" "PUT" "POST" & "DELETE" requests in different test suits.
+		
+		lets start with get
+	
+#3 - 
+	Inside the previous describe block, make another one for "GET /"
+		describe("/api/genres", () => {
+			describe("GET /" () => {
+				
+			})
+		})
+
+#4 - In this suit there should be one test.
+		describe("/api/genres", () => {
+			describe("GET /" () => {
+				it("should return all genres", () => {
+					
+				})
+			})
+		})
+		
+		
+#5 -
+At this point I need to load the server.
+
+let server = require("../../index")
+
+There is a problem with doing it this way. The first time I run the test, the server will listen on port 3000.
+If I make a change to the code, JEST will re-run the tests. Because Jest will reload the module it'll try to load up another server object again and I'll get an exception as there is
+already a server running on port 3000.
+
+When writing integration test always load the server before and close it after each test.
+
+*** How to load/close the server ****
+In JEST/Jasmine there is a function "beforeEach()" like other utility functions it takes a callback.
+
+describe("/api/genres", () => {
+    beforeEach(() => {
+
+    })
+    
+    describe("GET /" () => {
+        it("should return all genres", () => {
+
+        })
+    })
+})
+
+Now whatever I put in the beforeEach will be called before each test in the test suite.
+There I can load the server.
+
+
+describe("/api/genres", () => {
+    beforeEach(() => { server = require('../../index'); })
+    
+    describe("GET /" () => {
+        it("should return all genres", () => {
+
+        })
+    })
+})
+
+
+#6 -
+Similarly there is another utility function: afterEach() and there I can shut down the server after each test.
+
+describe("/api/genres", () => {
+    beforeEach(() => { server = require('../../index'); })
+	afterEach(() => { server.close(); });
+    
+    describe("GET /", () => {
+        it("should return all genres", () => {
+
+        })
+    })
+})
+
+#7 - 
+Now that I have a server I can call the endpoint. So now I import supertest.
+const request = require("supertest")
+
+it returns a function and now I can call "request" and send a request to an endpoint.
+To use it I pass the server object and depending on the type of request I want to send call .get, .post, .put, or .delete
+
+Code:
+const request = require("supertest");
+
+let server;
+
+describe("/api/genres", () => {
+  beforeEach(() => {
+    server = require("../../index");
+  });
+  afterEach(() => {
+    server.close();
+  });
+
+  describe("GET /", () => {
+    it("should return all genres", async () => {
+      const res = await request(server).get("/api/genres");
+      expect(res.status).toBe(200);
+    });
+  });
+});
+
+
+Returns:
+
+2020-04-03T19:50:12.017Z - [info]: connected to tester-00-dbmjh.mongodb.net/vidly_test? ...
+ PASS  tests/integration/genres.test.js (5.516s)
+  /api/genres
+    GET /
+      √ should return all genres (3893ms)
+
+
+PROBLEM:
+The test is too generic, with only checking the status code to be 200 I can't actually verify that I'm getting the list of genres. So nest I'll pre-populate the DB
+and change the test to verify that the return I get is what I stored in the DB.
+
