@@ -1,0 +1,41 @@
+**************************************************
+**** Exercise: Testing routes with Parameters ****
+**************************************************
+Here are my results from the exercise, the only line that was different is the get property, I left my solution and the instructors solution in the test.
+It doesn't need both, could remove one or the other.
+
+  describe("GET /:id", () => {
+    it("should return a genre if a valid ID is passed", async () => {
+      const genre = new Genres({ name: "genreid" });
+      await genre.save();
+      const res = await request(server).get("/api/genres/" + genre._id);
+      expect(res.status).toBe(200);
+      expect(res.body.name === "genreid").toBeTruthy();
+      expect(res.body).toHaveProperty("name", genre.name); //! Similar to above, a bit more specific. Don't need both lines
+    });
+
+
+*** Second execution path of the function, VALIDATING ObjectID's ***
+My test worked fine, but the instructors didn't at first. his was given an invalid object ID from winston that was a 500 server error.
+So the instructor changed the single object router get method in genres.js to include:
+    if (!mongoose.Types.ObjectId.isValid(req.params._id))
+      return res.status(404).send("Invalid ID.");
+
+
+
+Test code:
+  describe("GET /:id", () => {
+    it("should return a genre if a valid ID is passed", async () => {
+      const genre = new Genres({ name: "genreid" });
+      await genre.save();
+      const res = await request(server).get("/api/genres/" + genre._id);
+      expect(res.status).toBe(200);
+      expect(res.body.name === "genreid").toBeTruthy();
+      expect(res.body).toHaveProperty("name", genre.name); //! Similar to above, a bit more specific. Don't need both lines
+    });
+
+    it("should return a 404 if an invalid ID is passed", async () => {
+      const res = await request(server).get("/api/genres/0");
+      expect(res.status).toBe(404);
+    });
+  });
