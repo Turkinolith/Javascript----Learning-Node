@@ -1,0 +1,199 @@
+**************************************
+**** Testing POST - Authorization ****
+**************************************
+In this lesson I'm going to write a test for the post route.
+#1 - failed validation
+
+#2 - success
+	For the success I need 2 tests:
+		#1 - query the DB make sure the genre I created is saved.
+		#2 - Make sure that the genre is in the body of the response.
+
+#2 - Successful validation, failed input
+	This is actually 2 tests:
+		#1 - The input is less than the minimum character length
+		#2 - The input is greater than the maximum character length
+
+Code:
+  describe("POST /", () => {
+    it("should return a 401 if client is not logged in", async () => {
+      const res = await request(server)
+        .post("/api/genres")
+        .send({ name: "genre1" });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+
+**************************************
+**** Testing POST - Invalid Input ****
+**************************************
+For the second test I assume the user is logged in, but the submitted genre is invalid.
+What makes the genre invalid? It would fail the schema check.
+Checking the schema I see that the minlength is 3, so a genre submitted with a name length of 2 would be invalid.
+So, I'll specifically call out that I'm expecting a 400 error if the genre is less than 3 characters.
+
+In order to do this test properly, since this function checks for authorization, I need to login.
+I need to generate an authentication token then include that token in the header of this request.
+
+#1 - 
+So, first I need to import the user model because I added a method into it to generate an auth token.
+	const { Users } = require("../../Models/user");
+
+#2 -
+Now I generate the token by using a new Users object.
+	const token = new Users().generateAuthToken();
+	
+#3 -
+I add to my request the .set() method, this allows me to set a header.
+Into the arguments I pass a string for which header I'll be setting, as the second argument I pass the value, which is the token I generated.
+
+
+#4 - 
+Now I change the name to something invalid, like 12
+
+#5 -
+And now I change the expected status to be 400.
+
+Code:
+    it("should return a 400 if the genre is less than 3 characters", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "12" });
+
+      expect(res.status).toBe(400);
+    });
+
+Test Passes!
+
+By the same process, I shouldn't be able to send a genre with a character length greater than 50. so lets test for that.
+
+	**How to dynamically generate a long string**
+in the terminal window type "node" to open up the node input window
+	new Array(5).join("a")
+Returns: "aaaa"
+What is happening is I'm making an array of 5 empty elements and putting an "a" between them. 
+In effect, this outputs a string of 4 a's (one for between each element)
+So, to get a string of 50 a's: new Array(51).join("a")
+
+So I can put this into the code directly.
+
+    it("should return a 400 if the genre is more than 50 characters", async () => {
+      const token = new Users().generateAuthToken();
+
+      const name = new Array(52).join("a");
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: name });
+
+      expect(res.status).toBe(400);
+    });
+
+
+************************************
+**** Testing POST - Valid Input ****
+************************************
+This is quick to do after the previous tests. 
+The only extra step is to call Genres.find and look for a genre named as the one I submit.
+Then, use the new "tobeNull()" matcher paired up with ".not" to verify that we get a non-null return from searching for the genre specified.
+Even though I'm creating a new DB entry the after function will kick in after and clean things up.
+
+    it("should save the genre if it is valid", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "genre1" });
+
+      const genre = Genres.find({ name: "genre1" });
+
+      expect(genre).not.toBeNull();
+    });
+
+Now the last test:
+
+Make sure the genre is in the body of the response.
+I can simply copy the code from above, remove the DB query as I don't really care about that
+and just look at the response body and check if it has the "_id" property
+Then in addition to that look at the response body and see if it has the "name" property and its value is "genre1"
+
+Passes!
+
+Current code for POST testing:
+
+  describe("POST /", () => {
+    it("should return a 401 if client is not logged in", async () => {
+      const res = await request(server)
+        .post("/api/genres")
+        .send({ name: "genre1" });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return a 400 if the genre is less than 3 characters", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "12" });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return a 400 if the genre is more than 50 characters", async () => {
+      const token = new Users().generateAuthToken();
+
+      const name = new Array(52).join("a");
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: name });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return a 400 if the genre is empty", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({});
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should save the genre if it is valid", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "genre1" });
+
+      const genre = Genres.find({ name: "genre1" });
+
+      expect(genre).not.toBeNull();
+    });
+
+    it("should return the genre if it is valid", async () => {
+      const token = new Users().generateAuthToken();
+
+      const res = await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "genre1" });
+
+      expect(res.body).toHaveProperty("_id");
+      expect(res.body).toHaveProperty("name", "genre1");
+    });
+  });
