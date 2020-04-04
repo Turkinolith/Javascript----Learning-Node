@@ -1,0 +1,141 @@
+********************************
+**** Populating the Test DB ****
+********************************
+
+To make the integration test from the previous lesson better, its time to populate the test DB with some sample entries then change the expectation or add another
+expectation to assert that the results in the response are the ones in the DB.
+
+#1 -
+To populate the DB I'll need the genre model.
+
+	const { Genres } = require("../../Models/genre")
+
+#2 -
+Down in the test function add:
+	  describe("GET /", () => {
+		it("should return all genres", async () => {
+		  await Genres.collection.insertMany([
+			{ name: 'genre1' },
+			{ name: 'genre2' }
+		  ]);
+		  
+		  const res = await request(server).get("/api/genres");
+		  expect(res.status).toBe(200);
+		});
+	  });
+
+Using the insertMany I can add several entries at once.
+Note that I'm not using simple names like name: "a", etc. because I'm testing the full API stack and the validation function would kick in and complain
+that the name isn't long enough.
+
+The insertMany method returns a promise so it needs to be awaited.
+
+#3 -
+Now I'll assert that the body length of the response is tobe 2. that there are 2 items in the array. 
+This is a bit generic, because even if I return an array of numbers that test would pass.
+So ideally I'd make sure that the objects for "genre1" and "genre2" are in the body of the response.
+I'll come back and fix that in a second.
+Before going any further lets make sure this works.
+
+It failed, on investigation it said it expected 2, got 11.
+On checking the test DB I saw a ton of genre1 and genre2 clones in the DB.
+So as I was editing the file, the genres were being saved.
+Once I deleted the collection and ran the test again it passed.
+
+So, I need to clean up the method so it cleans the DB.
+
+#4 -
+After the assertions call Genres.remove, pass an empty object as the query object, and this will remove all documents within the collection.
+It returns a promise so it needs to be awaited.
+	await Genres.deleteMany({})
+
+There is a problem with doing it this way, if one of the expectations fail, the cleanup will never be executed.
+So, the proper place to do the cleanup is after each function.
+So, lets add it along next to the server close in the "afterEach()" block.
+
+Code is now:
+	const request = require("supertest");
+	const { Genres } = require("../../Models/genre");
+
+	let server;
+
+	describe("/api/genres", () => {
+	  beforeEach(() => {
+		server = require("../../index");
+	  });
+	  afterEach(async () => {
+		await Genres.deleteMany({});
+		server.close();
+	  });
+
+	  describe("GET /", () => {
+		it("should return all genres", async () => {
+		  await Genres.collection.insertMany([
+			{ name: "genre1" },
+			{ name: "genre2" },
+		  ]);
+
+		  const res = await request(server).get("/api/genres");
+		  expect(res.status).toBe(200);
+		  expect(res.body.length).toBe(2);
+		});
+	  });
+	});
+
+
+I had to add an additional tag to the JEST run option to get it to stop yelling at me.
+	"test": "jest --watchAll --verbose --detectOpenHandles"
+
+But with that, no complaints and all of the tests pass!
+
+#5
+The Take Away is this: Write and Execute each test as if it was the only test in the world. So it should always be executed in a clean state and if state is modified
+I should always clean up afterwards.
+	
+#6 -
+Now lets make the assertation more specific. Instead of checking the # of items in the array I'll make sure in the body of the response I have a genre object with the name "genre1"
+This uses the array "some" method, g = genre so look for one of the items in the array genre.name to equal genre1.
+
+		expect(res.body.some(g => g.name === "genre1")).toBeTruthy();
+
+Tested and that test passes, so now I'll duplicate the line and check for "genre2"
+It passes! Code is now:
+
+	const request = require("supertest");
+	const { Genres } = require("../../Models/genre");
+
+	let server;
+
+	describe("/api/genres", () => {
+	  beforeEach(() => {
+		server = require("../../index");
+	  });
+	  afterEach(async () => {
+		await Genres.deleteMany({});
+		server.close();
+	  });
+
+	  describe("GET /", () => {
+		it("should return all genres", async () => {
+		  await Genres.collection.insertMany([
+			{ name: "genre1" },
+			{ name: "genre2" },
+		  ]);
+
+		  const res = await request(server).get("/api/genres");
+		  expect(res.status).toBe(200);
+		  expect(res.body.length).toBe(2);
+		  expect(res.body.some((g) => g.name === "genre1")).toBeTruthy();
+		  expect(res.body.some((g) => g.name === "genre2")).toBeTruthy();
+		});
+	  });
+	});
+
+EXERCISE:
+	In genres.js
+	There is a get route handler to get a single genre.
+	In this function there are 2 execution paths.
+	If we dont have the given genre return a 404 with a message.
+	if we do, return the genre.
+	
+	Write 2 integration tests for this endpoint.
