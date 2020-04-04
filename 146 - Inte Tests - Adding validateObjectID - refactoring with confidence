@@ -1,0 +1,46 @@
+*************************************
+**** Refactoring with Confidence ****
+*************************************
+In the previous exercise the instructor added this line of code to the specif genre router:
+    if (!mongoose.Types.ObjectId.isValid(req.params._id))
+      return res.status(404).send("Invalid ID.");
+
+Something like this will be needed for all of the routes that get a single object.
+Instead of repeating it everywhere its needed, I'll be taking the code out and making it into a middleware function.
+
+#1 - Add a new middelware file. 
+	
+	validateObjectId.js
+
+#2 inside it make a new function:
+	module.exports = function(req, res, next) {}
+	
+#3 cut the objectID validate code from the genres file and put it in here.
+	Add a call to next(); at the end to pass control to next middleware or function in the pipeline
+	
+#4 it has a dependency on mongoose, so lets import that
+
+Now I'm done with this middleware
+
+Middleware function code:
+	const mongoose = require("mongoose");
+
+	module.exports = function (req, res, next) {
+	  if (!mongoose.Types.ObjectId.isValid(req.params._id))
+		return res.status(404).send("Invalid ID.");
+
+	  next();
+	};
+
+
+Now lets import and use it
+back in genres.js I import it and insert the middleware into the get function.
+
+	const validateObjectId = require("../middleware/validateObjectId");
+...
+
+	//! Returns a specific genre
+	router.get("/:_id", validateObjectId, async (req, res) => {
+...
+
+Run the tests and everything passes!
