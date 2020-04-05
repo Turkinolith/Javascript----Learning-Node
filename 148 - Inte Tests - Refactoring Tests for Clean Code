@@ -1,0 +1,223 @@
+*****************************
+**** Writing Clean Tests ****
+*****************************
+In the tests for testing the POST method, there is a fair amount of code duplication.
+Example - This line is repeated often: const token = new Users().generateAuthToken();
+
+Same for sending the request to the server, there is only a small variation: sometimes short name, somtimes long, sometimes without the token
+but the body of the request is pretty much the same.
+
+
+
+Mosh's technique for writing clean tests:
+
+
+On top of the test block we're working with the test suite.
+Define the Happy path and then in each test we change one parameter that clearly aligns with the name of the test.
+
+#1 -
+	Define the happy path. In this case it is "should save the genre if it is valid"
+	So, lets copy the "const res = await ..." block out of that so to extract it and put it elsewhere.
+	In its place I'll put a //TODO:
+
+#2 - 
+	On top of the test suite, before the first "it("should...")" block, lets define a new function:
+		const exec = async () => {
+		  return await request(server)
+            .post("/api/genres")
+            .set("x-auth-token", token)
+            .send({ name: "genre1" });
+		}
+
+#3 -
+	Back down where I put the //TODO: , replace it with a call on await exec() and get the response:
+		const res = await exec();
+		
+
+#4 -
+	Lets look at the validation test, code here:
+		    it("should return a 401 if client is not logged in", async () => {
+			  const res = await request(server)
+				.post("/api/genres")
+				.send({ name: "genre1" });
+
+			  expect(res.status).toBe(401);
+			});
+	
+The only difference between what it has and the exec function is the line where I set the auth token.
+
+So, I can replace those lines with a call to the exec function, await and save the response.
+But before calling it, I need to get rid of the token. I *COULD* pass token as a parameter to the exec function
+but thats a very procedural way of programming.
+Instead what I can do is set token before the exec function using let.
+
+Then in order to test the scenario where the client is not logged in, I just explicitly set the token to an empty string.
+So that way in this test I don't have a token but in other tests where I do I should set it to a valid JWT before each test.
+
+If you look at other tests I'm already doing this:
+	const token = new Users().generateAuthToken();
+I can extract this and put it in the beforeEachFunction for this test suite.
+
+  describe("POST /", () => {
+
+    // Define a default token value.
+    let token;
+
+    const exec = async () => {
+      return await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name: "genre1" });
+    };
+
+    beforeEach(() => {
+      token = new Users().generateAuthToken();
+    })
+
+    it("should return a 401 if client is not logged in", async () => {
+
+      token = "";
+      const res = await exec();
+
+      expect(res.status).toBe(401);
+    });
+
+Now token is declared, before each test I generate an auth token, but in the case of the not logged in test it changes token to be explicitly an empty string.
+
+Now the test is only 3 lines of code, its very clear and what is going on explicitly aligns with the description of the test.
+
+
+#5 -
+	Now lets apply it to another test, "should return a 400 if the genre is less than 3 characters"
+	Again replace the request block with the call to exec function, awaited as the response.
+	Now what is it I'm changing? the length of the genre name.
+	So, similarly to the token, I can define the name as a variable in this test suite and change the variable in each test.
+	
+	A - Define name with let at the top
+	
+	B - inside the exec function replace the hardcoded "genres1" with name, now I have an object { name: name } so I can simplify this with 
+	ES6 notation: { name }
+	
+	C - in "beforeEach()" 
+		set the value for name for the happy path. name = "genre1"
+	
+	D -
+		Now in the test for less than 3 characters I can override the variable:
+			name = "ab"
+
+Code:
+	it("should return a 400 if the genre is less than 3 characters", async () => {
+      name = "ab"
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+#6 -
+Now I can do the same thing for name is more than 50 characters.
+	**NOTE: Remove the const for the name, else it will be a different "name" variable with a different scope.
+	
+	it("should return a 400 if the genre is more than 50 characters", async () => {
+      name = new Array(52).join("a");
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+
+
+Final Code for genres.test.js
+
+
+const request = require("supertest");
+const { Genres } = require("../../Models/genre");
+const { Users } = require("../../Models/user");
+
+let server;
+
+describe("/api/genres", () => {
+  beforeEach(() => {
+    server = require("../../index");
+  });
+  afterEach(async () => {
+    await Genres.deleteMany({});
+    server.close();
+  });
+
+  describe("GET /", () => {
+    it("should return all genres", async () => {
+      await Genres.collection.insertMany([
+        { name: "genre1" },
+        { name: "genre2" },
+      ]);
+
+      const res = await request(server).get("/api/genres");
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(2);
+      expect(res.body.some((g) => g.name === "genre1")).toBeTruthy();
+      expect(res.body.some((g) => g.name === "genre2")).toBeTruthy();
+    });
+  });
+
+  describe("GET /:id", () => {
+    it("should return a genre if a valid ID is passed", async () => {
+      const genre = new Genres({ name: "genreid" });
+      await genre.save();
+      const res = await request(server).get("/api/genres/" + genre._id);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("name", genre.name);
+    });
+
+    it("should return a 404 if an invalid ID is passed", async () => {
+      const res = await request(server).get("/api/genres/0");
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /", () => {
+    // Define a default token value.
+    let token;
+    let name;
+
+    const exec = async () => {
+      return await request(server)
+        .post("/api/genres")
+        .set("x-auth-token", token)
+        .send({ name });
+    };
+
+    beforeEach(() => {
+      token = new Users().generateAuthToken();
+      name = "genre1";
+    });
+
+    it("should return a 401 if client is not logged in", async () => {
+      token = "";
+      const res = await exec();
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return a 400 if the genre is less than 3 characters", async () => {
+      name = "ab";
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+    it("should return a 400 if the genre is more than 50 characters", async () => {
+      name = new Array(52).join("a");
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+    it("should save the genre if it is valid", async () => {
+      await exec();
+      const genre = Genres.find({ name: "genre1" });
+      expect(genre).not.toBeNull();
+    });
+
+    it("should return the genre if it is valid", async () => {
+      const res = await exec();
+      expect(res.body).toHaveProperty("_id");
+      expect(res.body).toHaveProperty("name", "genre1");
+    });
+  });
+});
