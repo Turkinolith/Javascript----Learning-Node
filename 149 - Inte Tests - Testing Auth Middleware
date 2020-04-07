@@ -1,0 +1,93 @@
+*********************************
+**** Testing Auth Middleware ****
+*********************************
+Currently there is a single test, in the genres.test.js file, that tests the authorization.
+If the client doesn't provide a token I should expect a 401 response.
+
+If I look at the auth middleware implementation, there are multiple execution paths.
+One is that we don't have a token, and thats the one I've tested.
+
+Another is that the client sends a token, but its not valid, so I need to test that the response is 400.
+
+Why didn't I test this in the genres.test? Because I use this auth middleware in different parts of the application on different endpoints.
+It doesn't make sense to repeat all this logic every time I test an endpoint.
+
+So, it makes sense to test this separately to make sure all aspects of it work.
+
+Then for endpoints that require auth, like for posting a genre, just write one test to make sure that its included before the route handler.
+
+
+#1 -
+	Add a new file in the integration test folder: auth.test.js
+	Here I'm mixing middleware and route handler tests, if I'm working on a larger application I may want to separate these into different folders.
+	
+#2 -
+	Lets describe the test: 
+		describe("auth middleware"), () => {
+		
+#3 -
+	Set up the server connections, just copy the one from genres for this to make a beforeEach/afterEach block.
+	Also need to import supertest.
+	
+#4 -
+	Now lets define the "happy Path", we send a request to an endpoint that requires Authorization. sending a post request to the server with a genres object.
+	Make sure to send a valid object so we know that any errors we get back are coming from the auth middleware.
+	
+	    const exec = () => {
+        return request(server).post('/api/genres').send({ name: 'genre1' })
+		};
+
+
+
+Code for all of the integration tests are here:
+	const { Users } = require("../../Models/user");
+	const { Genres } = require("../../Models/genre");
+	const request = require("supertest");
+	let server;
+
+	describe("auth middleware", () => {
+	  beforeEach(() => {
+		server = require("../../index");
+	  });
+	  afterEach(async () => {
+		await Genres.deleteMany({});
+		server.close();
+	  });
+
+	  let token;
+
+	  const exec = () => {
+		return request(server)
+		  .post("/api/genres")
+		  .set("x-auth-token", token)
+		  .send({ name: "genre1" });
+	  };
+
+	  beforeEach(() => {
+		token = new Users().generateAuthToken();
+		name = "genre1";
+	  });
+
+	  it("should return 401 if no token is provided", async () => {
+		token = "";
+
+		const res = await exec();
+		expect(res.status).toBe(401);
+	  });
+
+	  it("should return 400 if no token is invalid", async () => {
+		token = "a";
+
+		const res = await exec();
+		expect(res.status).toBe(400);
+	  });
+
+	  it("should return 200 if token is valid", async () => {
+		const res = await exec();
+		expect(res.status).toBe(200);
+	  });
+	});
+
+The only thing left is when the auth function gets a response that it correctly looks for a token payload.
+Supertest doesn't support getting the payload object, so this requires a unit test to cover.
+I'll be doing that test in the next lesson.
