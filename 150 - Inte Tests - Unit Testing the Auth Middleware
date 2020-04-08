@@ -1,0 +1,157 @@
+******************************************
+**** Unit Testing the Auth Middleware ****
+******************************************
+In the last lesson I learned that sometimes you can't test a specific functionality using integration tests.
+That is why in any application you need both unit and integration tests to compliment each other.
+There is no one-size-fits-all
+
+I'll be writing a unit tests for auth.js function to make sure that if the client sends a valid JWT that 
+req.user will be populated with the payload of the JWT.
+
+In the test folder, go to the unit tests folder, create a new folder within it for middleware and a new file for auth.js
+
+Code for the test:
+
+const { Users } = require("../../../Models/user");
+const auth = require("../../../middleware/auth");
+
+describe("auth middleware", () => {
+  it("should populate req.user with payload of a valid JWT", () => {
+    //* Generate a valid JWT
+    const token = new Users().generateAuthToken();
+
+    //* Since I'm calling the auth middleware, to set up the function I need to generate mock req, res, and next values
+    ///////////////////////////////////////
+    //* in the function it calls req.header to get the token, so I need to mock that parameter for the req object
+    let req = {
+      header: jest.fn().mockReturnValue(token),
+    };
+    //* I'm not working with res, but I need to pass something as an argument for the function, so empty object.
+    let res = {};
+
+    //* At the end of the auth method I'm calling next() as all middleware should. I'll just mock a fake function for it.
+    let next = jest.fn();
+
+    //* TEST: run auth with the mocked values.
+    auth(req, res, next);
+
+    //* Check the result
+    expect(req.user).toBeDefined();
+  });
+});
+
+The assertion is very generic for now, I'll revisit that next.
+
+Check to make sure its working, it is!
+Now lets make the assertion more specific.
+
+Before generating the auth token, lets Initialize the Users() object with 2 properties,  id & isAdmin. These are the properties put in the payload of the tokens.
+
+Right above the token declaration I'll add a new line:
+	const user = { _id: 1, isAdmin: true }
+But this won't work, because _id: is invalid, so I need to pass a valid objectID there.
+
+On the top lets load mongoose then call the Types.ObjectId() method to generate a valid objectID.
+	const user = { _id: mongoose.Types.ObjectId(), isAdmin: true }
+	
+
+So now I have a user object, when creating a new instance of the Users model I pass "user" to initialize it.
+	const token = new Users(user).generateAuthToken();
+
+
+FINALLY, I can change the expectation to be:
+	expect(req.user).toMatchObject(user);
+	
+
+
+TEST:
+Now I run the test and I get this result-
+
+  ● auth middleware › should populate req.user with payload of a valid JWT
+
+    expect(received).toMatchObject(expected)
+
+    Compared values serialize to the same structure.
+    Printing internal object structure without calling `toJSON` instead.
+
+    - Expected  - 17
+    + Received  +  1
+
+      Object {
+    -   "_id": ObjectID {
+    -     "_bsontype": "ObjectID",
+    -     "id": Buffer [
+    -       94,
+    -       141,
+    -       77,
+    -       163,
+    -       169,
+    -       220,
+    -       138,
+    -       12,
+    -       220,
+    -       148,
+    -       213,
+    -       44,
+    -     ],
+    -   },
+    +   "_id": "5e8d4da3a9dc8a0cdc94d52c",
+        "isAdmin": true,
+      }
+
+      25 | 
+      26 |     //* Check the result
+    > 27 |     expect(req.user).toMatchObject(user);
+         |                      ^
+      28 |   });
+      29 | });
+      30 | 
+
+
+Oh look, this again.
+
+This is because technically when I create the user object here -
+	const user = { _id: mongoose.Types.ObjectId(), isAdmin: true };
+
+The ID property is an ObjectID, but when I decode a JWT I'm dealing with a string.
+So, to make sure the expectation passes I need to convert the ObjectID to a Hexadecimal string.
+	const user = {_id: mongoose.Types.ObjectId().toHexString(),isAdmin: true};
+
+Now the test Passes!
+
+
+Final Unit Test Code:
+
+const { Users } = require("../../../Models/user");
+const auth = require("../../../middleware/auth");
+const mongoose = require("mongoose");
+
+describe("auth middleware", () => {
+  it("should populate req.user with payload of a valid JWT", () => {
+    //* Generate a valid JWT, Need to convert the ObjectID to a HexString because when I decode the JWT I'm dealing with a string
+    //* Where the mongoose ObjectID is in a different format.
+    const user = {
+      _id: mongoose.Types.ObjectId().toHexString(),
+      isAdmin: true,
+    };
+    const token = new Users(user).generateAuthToken();
+
+    //* Since I'm calling the auth middleware, to set up the function I need to generate mock req, res, and next values
+    ///////////////////////////////////////
+    //* in the function it calls req.header to get the token, so I need to mock that parameter for the req object
+    let req = {
+      header: jest.fn().mockReturnValue(token),
+    };
+    //* I'm not working with res, but I need to pass something as an argument for the function, so empty object.
+    let res = {};
+
+    //* At the end of the auth method I'm calling next() as all middleware should. I'll just mock a fake function for it.
+    let next = jest.fn();
+
+    //* TEST: run auth with the mocked values.
+    auth(req, res, next);
+
+    //* Check the result
+    expect(req.user).toMatchObject(user);
+  });
+});
