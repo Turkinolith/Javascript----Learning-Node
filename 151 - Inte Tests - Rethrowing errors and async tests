@@ -1,0 +1,48 @@
+***************************************************************
+**** Error Lesson - Rethrowing Errors and Async unit Tests ****
+***************************************************************
+This took 3 hours of digging to figure out -_-
+
+If I have a try/catch block inside of an async function, I need to rethrow errors:
+
+async function testURL(today, yesterday) {
+  try {
+    let exists = await urlExist(today);
+    let exists2 = await urlExist(yesterday);
+    if (!exists) {
+      console.log("Todays URL invalid, checking yesterdays URL.");
+      if (!exists2) {
+        console.log("Error Reached!");
+        throw new Error("URL's invalid for today and yesterday!");
+      }
+      return true;
+    }
+    return false;
+  } catch (err) {
+    throw err;
+  }
+}
+
+When testing for this since it is an async operation, I need to test for a rejected promise that then throws an error:
+
+const request = require("../../../models/request");
+
+describe("requests", () => {
+  it("should return false if today url is true", async () => {
+    let today = "https://www.google.com";
+    let yesterday = "";
+    const result = await request.testURL(today, yesterday);
+    expect(result).toBe(false);
+  });
+
+  it("should return true if today url is false and yesterday url is valid", async () => {
+    let today = "";
+    let yesterday = "https://www.google.com";
+    const result = await request.testURL(today, yesterday);
+    expect(result).toBe(true);
+  });
+
+  it("should should throw an exception if both today and yesterday are invalid", async () => {
+    await expect(request.testURL("", "")).rejects.toThrow();
+  });
+});
