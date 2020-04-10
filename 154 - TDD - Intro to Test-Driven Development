@@ -1,0 +1,26 @@
+*****************************************
+**** What is Test-Driven Development ****
+*****************************************
+When you get started with automated testing, a term heard often is Test-driven Development or TDD.
+
+Also call test-first is an approach to building software.
+
+With TDD you write tests BEFORE writing the production code.
+
+
+How TDD Works:
+
+#1 - Write a failing test.
+#2 - Write the simplest code to make the test pass. Emphasis on simplest
+#3 - Refactor if necessary.
+
+Repeat these steps over and over till you have a complete feature.
+
+Benefits of TDD:
+#1 - Testable Source Code from the very start
+#2 - Full code coverage by tests.
+#3 - Simpler Implementation.
+
+
+In contrast to Test first, there is Code First, which is what I've been doing.
+TDD in theory is more promising, in practice it can get really complex and slow things down.
