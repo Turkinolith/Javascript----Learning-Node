@@ -1,0 +1,64 @@
+***********************
+**** Code Coverage ****
+***********************
+As I write tests for parts of the app, I might be wondering how much of the code is covered by tests and what are some scenarios that haven't been tested.
+This is where a code coverage tool comes into play.
+
+How to use JEST to see how much of the code has been covered by tests.
+
+
+
+in the test script in package.json add a new flag.
+	--coverage
+
+
+run the test script again and it generates a report on how much of the code is covered by tests:
+
+--------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------
+File                      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+--------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------
+All files                 |   54.45 |     19.7 |   35.71 |   57.97 | 
+ vidly-backend            |     100 |      100 |     100 |     100 | 
+  index.js                |     100 |      100 |     100 |     100 | 
+ vidly-backend/Models     |   83.33 |      100 |   33.33 |   83.33 | 
+  customer.js             |   81.82 |      100 |       0 |   81.82 | 7,20
+  genre.js                |     100 |      100 |     100 |     100 | 
+  movie.js                |      80 |      100 |       0 |      80 | 7,26
+  rental.js               |   71.43 |      100 |       0 |   71.43 | 5,10                                                                              
+  user.js                 |   82.35 |      100 |      50 |   82.35 | 9,25,39
+ vidly-backend/middleware |      80 |    66.67 |      50 |   82.61 | 
+  admin.js                |      25 |        0 |       0 |   33.33 | 5,8
+  auth.js                 |     100 |      100 |     100 |     100 | 
+  error.js                |      60 |      100 |       0 |      60 | 6,7
+  validateObjectId.js     |     100 |      100 |     100 |     100 | 
+ vidly-backend/routes     |   32.74 |        6 |    12.5 |   36.14 | 
+  auth.js                 |   33.33 |        0 |       0 |    38.1 | 10,26,35,40,41,46,47,49-51,54,56,58
+  customers.js            |   23.26 |        0 |       0 |   26.32 | 12,13,15,16,21,22,24,34-36,38,44-47,49,58,59,61,62,67,68,70,78-81,83
+  genres.js               |   58.14 |       30 |      60 |   63.16 | 22,44,53,54,56,57,62,63,65,73-76,78
+  movies.js               |      22 |        0 |       0 |   25.58 | 13,14,16,17,19,20,29,31,33,44-46,48,54-57,59,68,69,71,72,74,75,85,86,88,96-99,101
+  rentals.js              |   26.83 |        0 |       0 |   28.21 | 16,17,19-21,23,26-28,30,33,34,36-38,40,54-57,63,72,73,78-81,83
+  users.js                |      36 |        0 |       0 |   39.13 | 14,15,18,19,21,23-25,27,29,31,35,44,45
+ vidly-backend/startup    |   94.55 |       50 |     100 |   94.55 |
+  config.js               |   66.67 |       50 |     100 |   66.67 | 10,13,14
+  db.js                   |     100 |      100 |     100 |     100 |
+  logging.js              |     100 |      100 |     100 |     100 |
+  routes.js               |     100 |      100 |     100 |     100 |
+  validation.js           |     100 |      100 |     100 |     100 |
+--------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------------------
+Test Suites: 4 passed, 4 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        19.004s
+Ran all test suites.
+
+it also generates an HTML report in a folder: coverage
+Inside that folder is another folder [icov-report] that has an index.html file
+Inside that report it'll tell you which folders and types of the code are covered or not. Its the same info as in the table above, but more pretty.
+You can click on the names of each section to drill down into a more detailed view.
+in the most detailed view you see the exact lines of code that need to have tests written for them highlighted.
+
+After writing a new test to cover a 404 error in the get specific genre function (submit valid object ID#, but the genre doesn't exist) JEST will recompile the web report
+simply refresh the page and the red highlight on that bit of code is now gone.
+
+Another thing to note, all of the coverage folder will need to be added to the gitignore because there is no point checking them into the repository.
+
