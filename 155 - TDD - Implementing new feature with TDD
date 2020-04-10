@@ -1,0 +1,68 @@
+**********************************
+**** Implementing the Returns ****
+**********************************
+Lets implement a new feature using test-driven development.
+
+	*** Design Doc: Add the ability to return a movie. ***
+
+Lets have a quick look at the rental model. it has 5 properties:
+customer, movie, dateOut, dateReturned, and rentalFee.
+
+The last 2 are initially undefined. When the customer returns a movie we set the return date and calculate the rental fee.
+
+In terms of API design how do we send a request to the server to return a movie?
+One way is to use the rentals API endpoint and add the ability to update a rental.
+Right now in the rentals API endpoint I only have the ability to GET rentals or create new ones.
+
+One solution is to add another handler for updating a rental, but this is a bad approach.
+Back in the rental model the 2 values: dateReturned and rentalFee, we don't want the client to set these values. Otherwise the client can send $0 as the rental fee.
+
+So, we want to have these values calculated and set on the server.
+By the same token we don't want the client to modify the dateOut property or the customer.
+
+A better approach is to have a new endpoint to return a movie.
+
+/api/returns
+-- It'll take POST to submit a return request.
+In this request there should be 2 properties: {customerId, movieId}
+
+On the server we look up the rental for that combo, get a rental document, set the date to current datetime and calculate the rental fee.
+
+
+	*** TEST CASES ***
+// POST /api/returns {customerId, movieId}
+
+Lets brainstorm all the test cases I can think of:
+
+when sending a POST request to the endpoint how should it behave?
+
+Only logged in users should be able to use it
+	// Return 401 if client is not logged in.
+
+Assuming client is logged in, make sure customerID is provided
+	// Return 400 if customerId is not provided
+	
+Similarly, make sure movieId is provided
+	// Return 400 if movieId is not provided.
+
+If DB can not find the rental for that combo, return 404.
+	// Return 404 if no rental is found for this customer/movie
+
+If we find a rental, but it is already processed-aka the return has already been done, return 400
+	// Return 400 if rental already processed.
+
+So, here are all the negative cases:
+	// Return 401 if client is not logged in.
+	// Return 400 if customerId is not provided
+	// Return 400 if movieId is not provided.
+	// Return 404 if no rental is found for this customer/movie
+	// Return 400 if rental already processed.
+
+And now the positive cases, if I get to this point it means I'm processing a valid return.
+
+	// Return 200 if valid request
+	// Set the return date
+	// Calculate the rental fee
+	// Increase the stock
+	// Return the rental summary, all the properties set.
+
