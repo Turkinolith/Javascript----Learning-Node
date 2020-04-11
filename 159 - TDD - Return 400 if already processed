@@ -1,0 +1,22 @@
+*****************************************
+**** Return 400 if already processed ****
+*****************************************
+Already Processed = The Return Date is already set.
+
+
+  if (rental.dateReturned)
+    return res
+      .status(400)
+      .send("All rentals for this customer already returned.");
+
+
+And the test itself is like so:
+    it("should return 400 if rental is found for the customerId/movieId but the return date is already set", async () => {
+      rental.dateReturned = new Date();
+      await rental.save();
+
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+	
+
