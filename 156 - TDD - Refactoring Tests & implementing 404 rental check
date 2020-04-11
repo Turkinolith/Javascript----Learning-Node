@@ -1,0 +1,167 @@
+***************************
+**** Refactoring Tests ****
+***************************
+
+At this point I have a lot of sloppy and duplicated code in my tests, I'll go through and clean it up.
+#1 - Move variable declarations into their own block.
+#2 - Define the exec function in the scope of the describe block instead of POST.
+	*Instead of setting values like "customerId" to an empty string, I can instead define an object called "payload" add that to the body of the request, then "delete payload.customerId", either way works.
+	
+	*Also remove the await/async within it as it is not explicitly needed as I'm calling async/await when calling on the function anyhow, its causing unnecessary slowdown of the code.
+	
+	**Just to test this, I also removed all the await/async from the function declarations in the genres.test.js, that cut the run time for the full test suite by over 2seconds!
+
+#3 - Consolidate all of the "beforeEach" functionality together.
+
+
+
+*** Exercise: implement // Return 404 if no rental is found for this customer/movie ***
+
+Notes: 
+Express req object - https://expressjs.com/en/api.html#req https://alligator.io/nodejs/req-object-in-expressjs/
+
+	req.params = properties mapped to the named route paramters, IE: if you have a route "/user/:name" then the "name" property can be obtained from req.params.name
+	req.body = access to the JSON data sent in the request. needs to be parsed first to access. IE: if you have "movieId" as a param, access it with req.body.movieId 
+	
+Mongoose .find method - https://mongoosejs.com/docs/api.html#model_Model.find
+	
+	Uses a filter object. 
+		IE: MyModel.find({ name: 'john', age: { $gte: 18 }});
+		
+		
+**MISTAKE MADE: I tried to use this function in my production code -
+	  const rental = await Rentals.find({
+		renter: { _id: req.body.customerId },
+		movie: { _id: req.body.movieId },
+	  });
+	  if (!rental) return res.status(404).send("Rental not found");
+
+The problem with this that I didn't realize is that .find returns an array, So I have to look at the first element of that array.
+*** I WAS GETTING AN EMPTY ARRAY BACK, THIS IS WHY THE (!rental) PART FAILED, EMPTY ARRAYS ARE NOT FALSY!
+It's cleaner to use .findOne instead.
+
+** ALSO: I DID NOT FORMAT RENTER AND MOVIE CORRECTLY! **
+to access sub-values I need to use dot notation: "renter._id": req.body.customerId is the CORRECT way to do it.
+
+
+
+
+````````````````````````````````````````````````````````````````````````````````````````````````````````````
+Test Code:
+const { Rentals } = require("../../Models/rental");
+const { Users } = require("../../Models/user");
+const request = require("supertest");
+const mongoose = require("mongoose");
+
+//////////////////////////////////////////////////////////////////
+
+describe("/api/returns", () => {
+  let server;
+  let customerId;
+  let movieId;
+  let rental;
+  let token;
+
+  const exec = () => {
+    return request(server)
+      .post("/api/returns")
+      .set("x-auth-token", token)
+      .send({ customerId, movieId });
+  };
+
+  beforeEach(async () => {
+    server = require("../../index");
+    token = new Users().generateAuthToken();
+    customerId = mongoose.Types.ObjectId();
+    movieId = mongoose.Types.ObjectId();
+
+    //* Rentals requires 2 properties, renter & movie. dateOut is not needed since I set that to be automatically set.
+    //* renter requires 2 properties, name and phone (the 3rd property has a default value & is not required), also need the _id as it'll be used in tests
+    //* movie requires 2 properties, title & dailyRentalRate, I'll also add _id for use in tests.
+    rental = new Rentals({
+      renter: {
+        _id: customerId,
+        name: "12345",
+        phone: "12345",
+      },
+      movie: {
+        _id: movieId,
+        title: "12345",
+        dailyRentalRate: "1",
+      },
+    });
+    await rental.save();
+  });
+  afterEach(async () => {
+    await Rentals.deleteMany({});
+    await server.close();
+  });
+
+  describe("POST /", () => {
+    it("should return a 401 if client is not logged in", async () => {
+      token = "";
+      const res = await exec();
+      expect(res.status).toBe(401);
+    });
+
+    it("should return a 400 if the customerId is not provided", async () => {
+      customerId = "";
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+    it("should return a 400 if the movieId is not provided", async () => {
+      movieId = "";
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 404 if no rental is found for the customerId/movieId", async () => {
+      await Rentals.deleteMany({});
+      const res = await exec();
+      expect(res.status).toBe(404);
+    });
+  });
+});
+
+
+````````````````````````````````````````````````````````````````````````````````````````````````
+returns.js
+
+const express = require("express");
+const router = express.Router();
+const { Customers } = require("../Models/customer");
+const { Movies } = require("../Models/movie");
+const { Rentals } = require("../Models/rental");
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected input format: {"customerId": "ObjectId", "movieId": "ObjectId"}
+
+router.post("/", async (req, res) => {
+  let customer = null;
+  let movie = null;
+  try {
+    customer = await Customers.findById(req.body.customerId);
+  } catch (err) {
+    return res.status(400).send("Invalid customer.");
+  }
+
+  try {
+    movie = await Movies.findById(req.body.movieId);
+  } catch (err) {
+    return res.status(400).send("Invalid movie.");
+  }
+
+  const rental = await Rentals.findOne({
+    "renter._id": req.body.customerId,
+    "movie._id": req.body.movieId,
+  });
+
+  if (!rental) return res.status(404).send("Rental not found");
+
+  res.status(401).send("Unauthorized");
+});
+
+module.exports = router;
