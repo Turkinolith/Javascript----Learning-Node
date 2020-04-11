@@ -1,0 +1,237 @@
+*******************************
+**** Testing Authorization ****
+*******************************
+Now that the design is outlined and the DB framework is set up for the test, I can begin building my first test case.
+
+	// POST /api/returns {customerId, movieId}
+**  // Return 401 if client is not logged in.
+	// Return 400 if customerId is not provided
+	// Return 400 if movieId is not provided.
+	// Return 404 if no rental is found for this customer/movie
+	// Return 400 if rental already processed.
+	// Return 200 if valid request
+	// Set the return date
+	// Calculate the rental fee
+	// Increase the stock
+	// Return the rental summary, all the properties set.
+
+I based my code on the genres test, so here is the code I got:
+
+const { Rentals } = require("../../Models/rental");
+const request = require("supertest");
+const mongoose = require("mongoose");
+
+//////////////////////////////////////////////////////////////////
+
+describe("/api/returns", () => {
+  let server;
+  let customerId;
+  let movieId;
+  let rental;
+
+  beforeEach(async () => {
+    server = require("../../index");
+
+    customerId = mongoose.Types.ObjectId();
+    movieId = mongoose.Types.ObjectId();
+
+    //* Rentals requires 2 properties, renter & movie. dateOut is not needed since I set that to be automatically set.
+    //* renter requires 2 properties, name and phone (the 3rd property has a default value & is not required), also need the _id as it'll be used in tests
+    //* movie requires 2 properties, title & dailyRentalRate, I'll also add _id for use in tests.
+    rental = new Rentals({
+      renter: {
+        _id: customerId,
+        name: "12345",
+        phone: "12345",
+      },
+      movie: {
+        _id: movieId,
+        title: "12345",
+        dailyRentalRate: "1",
+      },
+    });
+    await rental.save();
+  });
+  afterEach(async () => {
+    await Rentals.deleteMany({});
+    await server.close();
+  });
+
+  describe("POST /", () => {
+    // Define a default token value.
+    let token;
+
+    const exec = async () => {
+      return await request(server)
+        .post("/api/returns")
+        .set("x-auth-token", token)
+        .send({ customerId, movieId });
+    };
+
+    beforeEach(() => {
+      token = new Users().generateAuthToken();
+    });
+
+    it("should return a 401 if client is not logged in", async () => {
+      token = "";
+      const res = await exec();
+      expect(res.status).toBe(401);
+    });
+  });
+});
+
+
+-TEST RESULT-
+When running the test I get a 404 error. Where did that come from?
+I havn't implemented the endpoint, so by default when we call an endpoint that doesn't exist Express returns a 404 error.
+
+
+
+	*** Implementing the Endpoint ***
+#1 -
+	Back in the routes folder I create a new folder. returns.js
+	Inside it I need to load express, get a router, and define a new endpoint.
+	Also set module.exports = router on the bottom.
+	
+#2 -
+	I need to include this router in the application object. so earlier I added the routes module in the startup folder, so add it there.
+	
+#3 - 
+	What is the simplest code I can write to make my test pass?
+	Well, the test only expects the response to be "401"
+	So in the router.post I can simply respond: res.status(401).send('Unauthorized');
+	This is the simplest code I can write.
+		router.post("/", async (req, res) => {
+		  res.status(401).send("Unauthorized");
+		});
+
+This may look silly, I may think "But I havn't really checked the JWT, or loaded the auth module middleware.
+But this is the whole point of test driven development. I only write the simplest code I really need to satisfy the test.
+Maybe as I write more test cases this code doesn't work anymore, then I come back and change it. This is the whole cycle.
+
+
+**** EXERCISE WRITE THE NEXT TEST ****
+(( I'm actually going ahead and doing both of the next 2 tests, as their almost the same ))
+**  // Return 401 if client is not logged in.
+[**]// Return 400 if customerId is not provided
+[**]// Return 400 if movieId is not provided.
+	// Return 404 if no rental is found for this customer/movie
+	// Return 400 if rental already processed.
+	// Return 200 if valid request
+	// Set the return date
+	// Calculate the rental fee
+	// Increase the stock
+	// Return the rental summary, all the properties set.
+
+Make sure both tests pass.
+```````````````````````````````````````````````````````````````````````````````````````````````````````````
+Test Code:
+
+const { Rentals } = require("../../Models/rental");
+const { Users } = require("../../Models/user");
+const request = require("supertest");
+const mongoose = require("mongoose");
+
+//////////////////////////////////////////////////////////////////
+
+describe("/api/returns", () => {
+  let server;
+  let customerId;
+  let movieId;
+  let rental;
+
+  beforeEach(async () => {
+    server = require("../../index");
+
+    customerId = mongoose.Types.ObjectId();
+    movieId = mongoose.Types.ObjectId();
+
+    //* Rentals requires 2 properties, renter & movie. dateOut is not needed since I set that to be automatically set.
+    //* renter requires 2 properties, name and phone (the 3rd property has a default value & is not required), also need the _id as it'll be used in tests
+    //* movie requires 2 properties, title & dailyRentalRate, I'll also add _id for use in tests.
+    rental = new Rentals({
+      renter: {
+        _id: customerId,
+        name: "12345",
+        phone: "12345",
+      },
+      movie: {
+        _id: movieId,
+        title: "12345",
+        dailyRentalRate: "1",
+      },
+    });
+    await rental.save();
+  });
+  afterEach(async () => {
+    await Rentals.deleteMany({});
+    await server.close();
+  });
+
+  describe("POST /", () => {
+    // Define a default token value.
+    let token;
+
+    const exec = async () => {
+      return await request(server)
+        .post("/api/returns")
+        .set("x-auth-token", token)
+        .send({ customerId, movieId });
+    };
+
+    beforeEach(() => {
+      token = new Users().generateAuthToken();
+    });
+
+    it("should return a 401 if client is not logged in", async () => {
+      token = "";
+      const res = await exec();
+      expect(res.status).toBe(401);
+    });
+
+    it("should return a 400 if the customerId is not provided", async () => {
+      customerId = "";
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+
+    it("should return a 400 if the movieId is not provided", async () => {
+      movieId = "";
+      const res = await exec();
+      expect(res.status).toBe(400);
+    });
+  });
+});
+
+
+````````````````````````````````````````````````````````````````````````````````````````
+Production Code:
+
+const express = require("express");
+const router = express.Router();
+const { Customers } = require("../Models/customer");
+const { Movies } = require("../Models/movie");
+
+////////////////////
+//! [C]-RUD
+////////////////////
+//* Expected input format: {"customerId": "ObjectId", "movieId": "ObjectId"}
+
+router.post("/", async (req, res) => {
+  let customer = null;
+  let movie = null;
+  try {
+    customer = await Customers.findById(req.body.customerId);
+  } catch (err) {
+    return res.status(400).send("Invalid customer.");
+  }
+
+  try {
+    movie = await Movies.findById(req.body.movieId);
+  } catch (err) {
+    return res.status(400).send("Invalid movie.");
+  }
+  res.status(401).send("Unauthorized");
+});
+
+module.exports = router;
