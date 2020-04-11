@@ -1,0 +1,66 @@
+***************************************
+**** TDD - Populating the Database ****
+***************************************
+
+Lets begin with adding a new file to the integration tests folder:
+	returns.test.js
+
+Start as usual by writing a describe block.
+
+	describe('/api/returns', () => {})
+
+Just like in the other tests I need to load the server, then populate the database with information before each test, then clean it up after.
+I should also create a DB entry that matches what a Rentals object should be.
+I describe lots of the values that I will be calling from outside of the beforeEach functions, like customerId, movieId, and rental, so that they 
+are scoped in such a way that I can access them in the tests.
+
+Code:
+const { Rentals } = require("../../Models/rental");
+const mongoose = require("mongoose");
+
+//////////////////////////////////////////////////////////////////
+
+describe("/api/returns", () => {
+  let server;
+  let customerId;
+  let movieId;
+  let rental;
+
+  beforeEach(async () => {
+    server = require("../../index");
+
+    customerId = mongoose.Types.ObjectId();
+    movieId = mongoose.Types.ObjectId();
+
+    //* Rentals requires 2 properties, renter & movie. dateOut is not needed since I set that to be automatically set.
+    //* renter requires 2 properties, name and phone (the 3rd property has a default value & is not required), also need the _id as it'll be used in tests
+    //* movie requires 2 properties, title & dailyRentalRate, I'll also add _id for use in tests
+    rental = new Rentals({
+      renter: {
+        _id: customerId,
+        name: "12345",
+        phone: "12345",
+      },
+      movie: {
+        _id: movieId,
+        title: "12345",
+        dailyRentalRate: "1",
+      },
+    });
+    await rental.save();
+  });
+  afterEach(async () => {
+    await Rentals.deleteMany({});
+    server.close();
+  });
+});
+
+
+To make sure this works I'll add a single temp test at the end:
+
+  it("should work!", async () => {
+    const result = await Rentals.findById(rental._id);
+    expect(result).not.toBeNull();
+  });
+
+I ran the test and it passed. so far so good!
