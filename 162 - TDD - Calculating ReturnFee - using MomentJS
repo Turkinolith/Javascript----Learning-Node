@@ -1,0 +1,46 @@
+***********************************************
+**** Exercise - Calculating the Rental Fee ****
+***********************************************
+
+Rental fee is simply: (numberOfDays * movie.dailyRentalRate)
+
+The instructor says that the rental fee should only work with 1 day minimum, not just for a few seconds. also suggests using momentJS (hah!) for dealing with dates in a way thats easier
+than the manual way I did it.
+
+npm i moment
+
+In this example I'll set the dateOut to be 7 days ago.
+to get the current date time in moment: 
+	moment()
+
+next to add 7 days to that value:
+	moment().add(-7, 'days')
+This gives a moment object that is 7 days in the past.
+
+Now, this needs to be converted to a standard javascript date object:
+	moment().add(-7, 'days').toDate();
+
+So this sets the dateOut to 7 days in the past.
+	rental.dateOut = moment().add(-7, 'days').toDate();
+	
+
+Next for the assertion: I'm assuming that the daily rental rate is 2 dollars, so that after 7 days it will be 14 dollars.
+
+``````````````````````````````````````````````````````````````````````````````````````````````````````````
+TEST CODE:
+    it("should calculate a rental fee of 14 assuming the input is 7 days out and dailyRentalRate of 2 per day with valid input", async () => {
+      rental.dateOut = moment().add(-7, "days").toDate();
+      await rental.save();
+      const res = await exec();
+
+      const rentalInDb = await Rentals.findById(rental._id);
+      expect(rentalInDb.rentalFee).toBe(14);
+    });
+``````````````````````````````````````````````````````````````````````````````````````````````````````````
+Production code:
+
+  rental.dateReturned = new Date();
+  const rentalDays = moment().diff(rental.dateOut, "days");
+  rental.rentalFee = rentalDays * rental.movie.dailyRentalRate;
+
+  await rental.save();
