@@ -1,0 +1,32 @@
+*******************************************
+**** Exercise - Testing the ReturnDate ****
+*******************************************
+
+
+I had a working solution for this, but I switched to the instructors exercise because it had some new methods that I wanted to have in my notes:
+
+The Test -
+
+The instructor calls the findByID method on the Rentals class and uses it to get the object from the database.
+Then, he creates a new date object and subtracts from it the value of the dateReturned property retrieved from the object in the line above.
+Then, he uses a JEST expect line to expect that the difference between the 2 values is less than 10 seconds.
+
+    it("should return a rental object with the return date set if input is valid", async () => {
+      const res = await exec();
+
+      const rentalInDb = await Rentals.findById(rental._id);
+      const diff = new Date() - rentalInDb.dateReturned;
+      expect(diff).toBeLessThan(10 * 1000);
+    });
+
+In the instructors answer to the route itself:
+
+	  rental.dateReturned = new Date();
+	  await rental.save();
+
+	  return res.status(200).send();
+	});
+
+I switched out of my working answer because it used another database query using the findbyIdandUpdate method as it seemed like an inefficient method, even though it worked.
+
+next exercise is to calcuate the rental fee.
