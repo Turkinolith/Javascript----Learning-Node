@@ -1,0 +1,76 @@
+*****************************
+**** Testing Movie Stock ****
+*****************************
+
+This exercise required more work because previously I has not saved the movie value to the DB.
+
+#1 -
+	Add a movie DB entry into the DB within the "beforeEach" block.
+	
+	for the ID I just passed the movieId variable that I had already created.
+	Of course, I had to load the Movies module to load the Movies class for this.
+	
+	    movie = new Movies({
+		  _id: movieId,
+		  title: "12345",
+		  dailyRentalRate: 2,
+		  numberInStock: 10,
+		  genre: { name: "12345" },
+		});
+
+		await movie.save();
+	
+#2 -
+	In the "afterEach" block, I needed to clean-up by adding a Movies.deleteMany({}) line
+	
+	  afterEach(async () => {
+		await Rentals.deleteMany({});
+		await Movies.deleteMany({});
+		await server.close();
+	  });
+
+#3 -
+	For the test itself:
+	
+    it("should increase the movie stock of the movie on the DB", async () => {
+      const res = await exec();
+
+      const movieInDB = await Movies.findById(movieId);
+      expect(movieInDB.numberInStock).toBe(movie.numberInStock + 1);
+    });
+
+	*** USING MONGODB UPDATE OPERATORS ***
+#4 -
+	For the production code, this was a little more complicated than originally expected because I'm using a mongoose native session and transaction to handle the saves.
+	The new stuff of note here is the mongoose updateOne method.
+	updateOne is beneficial in that you don't have to load a complete document from the DB before writing the update to it.
+	https://docs.mongodb.com/manual/reference/operator/update/
+	
+	updateOne( {#1}, {#2})
+	
+	#1 = Document object that defines the selection criteria for the update. in this case: { _id: rental.movie.id } is the selection.
+	#2 = document or pipeline that is the update. In this case it uses an Update Operator, $inc for increment, the target is the field "numberInStock", the amount to increment by is "1"
+	
+
+  try {
+    mongoose.startSession().then((session) => {
+      session.withTransaction(
+        async () => {
+          await rental.save();
+
+          await Movies.updateOne(
+            { _id: rental.movie._id },
+            {
+              $inc: { numberInStock: 1 },
+            }
+          );
+
+          res.status(200).send(rental);
+        },
+        { writeConcern: { wtimeout: 5000 } }
+      );
+    });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
