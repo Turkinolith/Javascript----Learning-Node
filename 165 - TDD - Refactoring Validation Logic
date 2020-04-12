@@ -1,0 +1,116 @@
+******************************************
+**** Refactoring the Validation logic ****
+******************************************
+Now that the code for the returns module is 100% covered by tests, I can refactor with confidence that the tests will catch if there is any breakage in functionality.
+
+So, instead of the 2 lines I use for testing customerId and movieId and returning status 400 if they are not available, I can replace them with a joi based 
+validate function, trusting in the tests to tell me if I break anything.
+
+#1 -
+	I make the validateReturn function, using a copy of it used in genres.
+
+it takes the req object as an argument, checks if it has customerId and movieId.
+// * ----------  PRE VALIDATE Return ----------
+function validateReturn(req) {
+  const schema = Joi.object({
+    customerId: Joi.objectId().required(),
+    movieId: Joi.objectId().required(),
+  });
+
+  return schema.validate(req);
+}
+
+
+Now back in the top of the post method:
+
+#2 -
+	Replace these lines -
+		if (!req.body.customerId) return res.status(400).send("Invalid customer.");
+		if (!req.body.movieId) return res.status(400).send("Invalid movie.");
+	
+	With these lines -
+	
+		const { error } = validateReturn(req.body);
+		if (error) return res.status(400).send(error.details[0].message);
+
+#3 -
+	Run the tests!
+	All are passing, so that tells me it should still function correctly!
+
+So I didn't break anything with this refactoring.
+But I'm asking "I replaced 2 lines, with 2 lines. The code isn't any shorter"
+This is true, but the instructor points out that these lines are in a lot of route handlers and its repetitive. So, it could be moved into a middleware function!
+
+#4 -
+	Lets define a middleware function then move it to a different file:
+	
+	const validate = (req, res, next) => {
+	  const { error } = validateReturn(req.body);
+	  if (error) return res.status(400).send(error.details[0].message);
+	}
+
+#5 - 
+	The tricky part, the first line of the function statement is different for each route handler.
+	the [validateReturn] portion, in another route handler I'm validating the Genre or a movie.
+	So I need to dynamically pass a validator function there.
+	
+	To fix this instead of passing req, res, and next I'll pass (validator) which is a function.
+	
+	Then change the implementation so instead of directly executing the code we return a middleware function to pass to express.
+	Express will call the middleware as part of processing a request.
+	
+		const validate = (validator) => {
+		  return (req, res, next) => {
+		    const {error} = validateReturn(req.body);
+			if (error) return res.status(400).send(error.details[0].message);
+		  }
+		}
+	
+#6 -
+	Now replace the validateReturn call with validator.
+	That way, the function I pass dynamically gets called.
+	Then at the end I pass, next.
+	
+		const validate = (validator) => {
+		  return (req, res, next) => {
+		    const {error} = validator(req.body);
+			if (error) return res.status(400).send(error.details[0].message);
+		  }
+		  next();
+		}
+
+
+#7 -
+	Now back in the post method...
+		router.post("/", auth, async (req, res) => {
+		
+	Here I want to pass an array of middleware functions, first I want to make sure the client is logged in.
+		router.post("/", [auth], async (req, res) => {
+	
+	Next, I validate the request and as a validator I pass a reference to the validateReturn function.
+		router.post("/", [auth, validate(validateReturn)], async (req, res) => {
+	
+	
+#8 -
+	Now I can save the changes and go back to terminal to see if the app is still working after the tests finish running.
+
+#9 -
+	Finally, I can move the validate function to its own middleware.
+	create validate.js in middleware
+	
+	module.exports = (validator) => {
+	  return (req, res, next) => {
+		const { error } = validator(req.body);
+		if (error) return res.status(400).send(error.details[0].message);
+		next();
+	  };
+	};
+
+#10 -
+	Back to returns.js, import the validator.
+	
+	const validate = require('../middleware/validate')
+
+#11 -
+	Now, using the new validator middleware, I can go back to all of my other route handlers and refactor away their unique validator lines and replace it with this
+	call to a single middleware.
