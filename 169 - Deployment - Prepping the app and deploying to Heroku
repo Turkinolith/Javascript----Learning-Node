@@ -1,0 +1,52 @@
+***********************************************
+**** Prepare the App & Deploying to Heroku ****
+***********************************************
+
+When a node app is deployed to Heroku it is initialized using npm start
+However, I do not yet have a script defined for that in my package.json
+
+add under scripts:
+	"start": "node index.js"
+
+I also need to add another property to package.json
+	"engines": {
+	
+	}
+
+Here I define the version of Node that I'm using.
+using node -v I get the version I'm using and then I add it into the value.
+
+  "engines": {
+    "node": "12.14.1"
+  },
+
+
+
+	**** DEPLOYING ****
+	*******************
+To deploy to heroku from the command line, navigate to the app folder
+	heroku create <optional app name, must be unique so can leave empty otherwise to get assigned one>
+
+
+In this case my app deployed with name: salty-tundra-51627
+The address of the app on Heroku is given, also it gives the address of the remote git repository.
+
+if I run: git remote -v 
+I get the list of remote repositories.
+
+Now, to deply I do:
+	git push heroku master
+
+This means push changes from local repository to a different one, in this case heroku.
+Master is the name of the branch that we're currently working on.
+
+
+	*** VERIFICATION ***
+	********************
+After pushing to Heroku I get build succeded and it gives me an address.
+https://salty-tundra-51627.herokuapp.com/
+
+So, I paste this into postman and send a git request to the genres.
+https://salty-tundra-51627.herokuapp.com/api/genres
+
+I get an error, 503 - Service Unavailable, so lets learn how to look at logs to diagnose this.
