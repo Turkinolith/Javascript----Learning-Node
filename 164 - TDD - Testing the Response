@@ -1,0 +1,75 @@
+******************************
+**** Testing the Response ****
+******************************
+Orignally I attempted to do this:
+
+
+it("should return the rental if valid input", async () => {
+  const res = await exec();
+  const rentalInDB = await Rental.findById(rental._id);
+  expect(res.body).toMatchObject(rentalInDb);
+
+However, this causes an error because rentalInDb returns with dates in plain JS objects where res.body has the dates in JSON strings.
+This was too specific of a test.
+
+So, instead it was refactored to this:
+
+    it("should return the rental if valid input", async () => {
+      const res = await exec();
+
+      expect(Object.keys(res.body)).toEqual(
+        expect.arrayContaining([
+          "renter",
+          "dateReturned",
+          "dateOut",
+          "rentalFee",
+          "movie",
+          "_id",
+        ])
+      );
+    });
+
+It gets res.body and calls the Object.keys method on it to return an array of keys.
+Then, I use the expect.arraycontaining, where I pass an array of strings that each are a key.
+
+````````````````````````````````````````````````````````````````````````````````````````````````````
+The production code:
+
+router.post("/", auth, async (req, res) => {
+  if (!req.body.customerId) return res.status(400).send("Invalid customer.");
+  if (!req.body.movieId) return res.status(400).send("Invalid movie.");
+
+  const rental = await Rentals.findOne({
+    "renter._id": req.body.customerId,
+    "movie._id": req.body.movieId,
+  });
+  if (!rental) return res.status(404).send("Rental not found");
+
+  if (rental.dateReturned)
+    return res.status(400).send("Return already processed.");
+
+  rental.dateReturned = new Date();
+  const rentalDays = moment().diff(rental.dateOut, "days");
+  rental.rentalFee = rentalDays * rental.movie.dailyRentalRate;
+
+  try {
+    mongoose.startSession().then((session) => {
+      session.withTransaction(
+        async () => {
+          await rental.save();
+
+          await Movies.updateOne(
+            { _id: rental.movie._id },
+            {
+              $inc: { numberInStock: 1 },
+            }
+          );
+          res.status(200).send(rental);
+        },
+        { writeConcern: { wtimeout: 5000 } }
+      );
+    });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
