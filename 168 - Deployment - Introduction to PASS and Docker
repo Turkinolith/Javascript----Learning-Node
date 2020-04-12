@@ -1,0 +1,16 @@
+***********************************
+**** Deployment - Introduction ****
+***********************************
+
+2 options for deploying a node app.
+
+#1 - Use a platform as a service provider (PAAS)
+#2 - Use Docker
+
+PAAS is good if you don't want to get involved with infrastructure. If you don't want to worry about servers, load balancer, restarting app on a crash.
+There are a lot of options here: Heroku, Google Cloud Platform, AWS, Azure.
+
+If you want more control over your deployment, if you want to deploy your node applications to your own webserver then Docker is a great option.
+With Docker you can make an image of your app and deploy that image to any computer you want.
+
+This section will cover deploying node apps to Heroku.
