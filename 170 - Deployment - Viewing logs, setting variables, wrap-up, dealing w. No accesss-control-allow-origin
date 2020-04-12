@@ -70,3 +70,22 @@ I initially had the program crash repeatedly in deployment.
 What happened? Kept getting the error: "MODULE_NOT_FOUND"
 After digging around I found that the require paths for multiple files had the path "../models/xxx" instead of "../Models/xxx", CAPITALIZATION MATTERS!
 
+*** IF GET ERROR: No 'Access-Control-Allow-Origin' header is present on the requested resource. ***
+***************************************************************************************************
+if I get the above error when attempting to access the backend using the frontend, that means I need 
+to add a CORS handling middleware.
+
+	npm i cors
+I'm using version 2.8.5
+
+add a new file to the startup folder: cors.js
+	const cors = require("cors");
+
+	module.exports = function (app) {
+	  app.use(cors());
+	};
+
+in index.js:
+	require("./startup/cors")(app);
+
+
