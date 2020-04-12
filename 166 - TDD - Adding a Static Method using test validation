@@ -1,0 +1,52 @@
+*********************************
+**** Mongoose Static Methods ****
+*********************************
+
+The next thing to improve is how to look up a rental in the post method of returns.js
+Instructor doesn't quite like the way it's being handled in this code:
+  const rental = await Rentals.findOne({
+    "renter._id": req.body.customerId,
+    "movie._id": req.body.movieId,
+  });
+  if (!rental) return res.status(404).send("Rental not found");
+ 
+Imagine if somewhere else in the app I want to look up a rental. I'd have to call the findOne method and pass an object with the renter._id and movie._id properties.
+Its a bit inconvenient.
+
+Would it be nicer if I could get a rental like this: 
+	const rental = await Rentals.lookup(renterId, movieId)
+
+Which approach is better? Obviously the 2nd one.
+So, I'll be adding the lookup method to the Rentals class.
+
+************************************************************************
+IN OBJECT ORIENTED PROGRAMMING THERE ARE 2 TYPES OF METHODS:
+
+Static - A method available directly on a class. Doesn't need a particular object.
+	EX:  Rental.lookup
+
+INSTANCE - A method available on an object or instance of a class. Used when working with a particular object. Result is dependent on that object
+	Ex: new User().generateAuthToken()
+
+#1 -
+	First in rental.js I need to extract the schmea from the rentals definition into its own constant, making sure to add the constant back into the Rentals declaration.
+	
+#2 -
+	Next I add the new method into the schema.
+	To do this I call schemaname.statics this returns an object and there I can define the static methods for the class.
+	
+	rentalSchema.statics.lookup = function (renterId, movieId) {
+	  return this.findOne({
+		"renter._id": renterId,
+		"movie._id": movieId,
+	  });
+	};
+
+This returns a promise, so the calling function will need to await it.
+Also, since I'm using "this" I can't use an arrow function here.
+
+**** NOTE *****
+IN the initial version of this function, I forgot to change the renter._id and movie._id fields to point to the renterId and movieId, they were still pointing at req.body....
+This type of bug can be very tedious to diagnose manually.
+In some larger apps, it may even become impossible, leading to a lot of wasted time and resources.
+So, by doing tests it keeps things more manageable from a business perspective.
