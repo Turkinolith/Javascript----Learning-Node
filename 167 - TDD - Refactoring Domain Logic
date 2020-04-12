@@ -1,0 +1,72 @@
+**************************************
+**** Refactoring the Domain Logic ****
+**************************************
+The next thing to improve here is this logic:
+
+  rental.dateReturned = new Date();
+  const rentalDays = moment().diff(rental.dateOut, "days");
+  rental.rentalFee = rentalDays * rental.movie.dailyRentalRate;
+
+This route handler is too busy calculating what should happen to the state of this rental object. 
+Any logic that modifies the state of an object should be encapsulated in that object itself.
+
+**Remember the Information Expert Principle **
+Using this principal, Move the logic for generating the auth token inside of the user class.
+By the same token, all the logic above is about the state of the rental.
+So, all the logic can be encapsulated within the Rental Object itself.
+
+In this lesson I'll modify the rental object and add a new method:
+
+	rental.return();
+
+When this method is called it sets the return date to now and calculate the rental fee.
+
+So, last lesson I created a static method. In this case I'll need an instance method since the outcome of this method depends on the unique properties of that particular
+rental object.
+
+	//* Adding an instance method to the class to set the return date & calculate the rental fee.
+	rentalSchema.methods.return = function () {
+	  this.dateReturned = new Date();
+
+	  const rentalDays = moment().diff(this.dateOut, "days");
+	  this.rentalFee = rentalDays * this.movie.dailyRentalRate;
+	};
+
+back in returns.js, I removed the old code and replaced it with rental.return();
+I also moved this into the transaction block since this method will now call a change on the database object and I don't want that happening outside of the transaction.
+
+
+router.post("/", [auth, validate(validateReturn)], async (req, res) => {
+  const rental = await Rentals.lookup(req.body.customerId, req.body.movieId);
+
+  if (!rental) return res.status(404).send("Rental not found");
+
+  if (rental.dateReturned)
+    return res.status(400).send("Return already processed.");
+
+  //* All DB related edits are done in a single transaction so that in case of an error, the whole
+  //* edit can be undone and the DB isn't left in a broken state.
+  try {
+    mongoose.startSession().then((session) => {
+      session.withTransaction(
+        async () => {
+          rental.return();
+
+          await rental.save();
+
+          await Movies.updateOne(
+            { _id: rental.movie._id },
+            {
+              $inc: { numberInStock: 1 },
+            }
+          );
+          //* Don't have to explicitly set status to 200, as express will set that by default
+          res.send(rental);
+        },
+        { writeConcern: { wtimeout: 5000 } }
+      );
+    });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
