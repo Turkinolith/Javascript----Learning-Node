@@ -1,0 +1,72 @@
+**********************
+**** Viewing Logs ****
+**********************
+To diagnose why the app isn't working I can look at Heroku logs in terminal or on the dashboard.
+
+In terminal
+	heroku logs
+	
+in dashboard:
+	Click "more" in top right and select view logs.
+	
+	*** NOTE: ***
+	*************
+These logs are not the ones I added to my app.
+To view those I need to either use SSH protocol to connect directly to the Heroku server
+
+Or
+
+in dashboard, click "more" click "run console", run "bash"
+that connects to the dyno or server, then it gives a terminal.
+run "ls" and it gives a list of files, then can view it using "cat filename"
+	"cat exceptions.log"
+
+
+To add environment variables:
+
+	heroku config:set <variablename=variablekey>
+
+IE:
+	heroku config:set vidly_jwtPrivateKey=value
+
+	*** ESCAPING SPECIAL CHARACTERS ***
+	***********************************
+If I need to escape special characters due to it being parsed wrong, like ! & ? etc.
+Put double quotes around it!
+	452"@"tester-vidly"?"retryWrites=true"^&"w=majority
+in this case the @, the ?, and the ^& are escaped
+
+
+After setting these up I have 3 keys now:
+NODE_ENV: production
+vidly_jwtPrivateKey
+vidly_mongoDBKey
+
+
+
+	*** NOTE ON CLOUD ARCHITECTURE ON HEROKU ***
+	********************************************
+By default you have one server, which is called a dyno.
+If you want to scale the app, you add more dynos.
+They have a temp file system. Every time they are restarted the file system is wiped out.
+This is why you can't store anything on their file system.
+If you want storage there are different kinds of add-ons for storing different kinds of data.
+The only thing they share, are the Environment variables.
+You set the variables at the app level and Heroku will auto replicate them across all dynos.
+
+
+********************************************************************
+**** MongoDB in the Cloud - Setting MongoDB to work with Heroku ****
+********************************************************************
+
+On the project dashboard click on "Resources", then "find more add-ons"
+Filter the Heroku add-ons by "Data Stores" and go select "mLab MongoDB"
+
+mongodb+srv://vidlyuser:5UfO6cjKJRmfv675@
+
+**** DEPLOYED SUCCESSFULLY! 
+LESSONS FROM THIS:
+I initially had the program crash repeatedly in deployment.
+What happened? Kept getting the error: "MODULE_NOT_FOUND"
+After digging around I found that the require paths for multiple files had the path "../models/xxx" instead of "../Models/xxx", CAPITALIZATION MATTERS!
+
